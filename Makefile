@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM k8s.gcr.io/elasticsearch:v6.2.4
+.PHONY:	binary build push
 
-VOLUME ["/data"]
-EXPOSE 9200 9300
+PREFIX = mintel
+IMAGE = es-image
+TAG = v6.2.4
 
-COPY run.sh bin/
-COPY config/elasticsearch.yml config/log4j2.properties config/
-RUN chown elasticsearch:elasticsearch -R config/ /data
-USER elasticsearch
-CMD ["bin/run.sh"]
+build:
+	docker build --pull -t $(PREFIX)/$(IMAGE):$(TAG) .
+
+push:
+	docker push $(PREFIX)/$(IMAGE):$(TAG)
+
