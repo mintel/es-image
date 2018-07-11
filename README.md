@@ -1,2 +1,1 @@
-# docker-exechealthz
 # es-image
