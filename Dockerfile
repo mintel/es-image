@@ -12,14 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM k8s.gcr.io/elasticsearch:v6.2.4
+FROM quay.io/pires/docker-elasticsearch-kubernetes:6.3.1
 
-VOLUME ["/data"]
-EXPOSE 9200 9300
-
-COPY run.sh bin/
-COPY scripts/* bin/
-COPY config/elasticsearch.yml config/log4j2.properties config/
-RUN chown elasticsearch:elasticsearch -R config/ /data
+USER root
+RUN chown elasticsearch:elasticsearch -R /elasticsearch /data
 USER elasticsearch
-CMD ["bin/run.sh"]
