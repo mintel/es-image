@@ -16,4 +16,5 @@ FROM quay.io/pires/docker-elasticsearch-kubernetes:6.3.1
 
 USER root
 RUN chown elasticsearch:elasticsearch -R /elasticsearch /data
+RUN rm -rf /elasticsearch/modules/x-pack/
 USER elasticsearch
