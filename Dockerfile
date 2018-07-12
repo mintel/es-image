@@ -18,6 +18,7 @@ VOLUME ["/data"]
 EXPOSE 9200 9300
 
 COPY run.sh bin/
+COPY scripts/* bin/
 COPY config/elasticsearch.yml config/log4j2.properties config/
 RUN chown elasticsearch:elasticsearch -R config/ /data
 USER elasticsearch
