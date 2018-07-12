@@ -1,14 +1,33 @@
-cluster.name: kubernetes-logging
+cluster:
+  name: ${CLUSTER_NAME}
 
-node.name: ${NODE_NAME}
-node.master: ${NODE_MASTER}
-node.data: ${NODE_DATA}
+node:
+  master: ${NODE_MASTER}
+  data: ${NODE_DATA}
+  name: ${NODE_NAME}
+  ingest: ${NODE_INGEST}
+  max_local_storage_nodes: ${MAX_LOCAL_STORAGE_NODES}
 
-transport.tcp.port: ${TRANSPORT_PORT}
-http.port: ${HTTP_PORT}
+processors: ${PROCESSORS:1}
 
-path.data: /data
+network.host: ${NETWORK_HOST}
 
-network.host: 0.0.0.0
+path:
+  data: /data/data
+  logs: /data/log
+  repo: ${REPO_LOCATIONS}
 
-discovery.zen.minimum_master_nodes: ${MINIMUM_MASTER_NODES}
+bootstrap:
+  memory_lock: ${MEMORY_LOCK}
+
+http:
+  enabled: ${HTTP_ENABLE}
+  compression: true
+  cors:
+    enabled: ${HTTP_CORS_ENABLE}
+    allow-origin: ${HTTP_CORS_ALLOW_ORIGIN}
+
+discovery:
+  zen:
+    ping.unicast.hosts: ${DISCOVERY_SERVICE}
+    minimum_master_nodes: ${MINIMUM_NUMBER_OF_MASTERS}

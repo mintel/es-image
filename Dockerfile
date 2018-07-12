@@ -12,10 +12,54 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM quay.io/pires/docker-elasticsearch-kubernetes:6.3.1
+FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.3.1
 
-USER root
-RUN apk add --no-cache --update coreutils
-RUN chown elasticsearch:elasticsearch -R /elasticsearch /data
-RUN rm -rf /elasticsearch/modules/x-pack/
+LABEL vendor="Mintel"
+LABEL version="6.3.1"
+LABEL maintainer "fciocchetti@mintel.com"
+
+
+# Export HTTP & Transport
+EXPOSE 9200 9300
+
+ENV ES_VERSION 6.3.1
+
+ENV PATH /usr/share/elasticsearch/bin:$PATH
+
+WORKDIR /usr/share/elasticsearch
+
+# Copy configuration
+COPY config /usr/share/elasticsearch/config
+
+# Copy run script
+COPY run.sh /
+
+# Copy scripts 
+COPY scripts /
+
+# Set environment variables defaults
+ENV ES_JAVA_OPTS "-Xms512m -Xmx512m"
+ENV CLUSTER_NAME elasticsearch-default
+ENV NODE_MASTER true
+ENV NODE_DATA true
+ENV NODE_INGEST true
+ENV HTTP_ENABLE true
+ENV NETWORK_HOST _site_
+ENV HTTP_CORS_ENABLE true
+ENV HTTP_CORS_ALLOW_ORIGIN *
+ENV MINIMUM_NUMBER_OF_MASTERS 1
+ENV MAX_LOCAL_STORAGE_NODES 1
+ENV SHARD_ALLOCATION_AWARENESS ""
+ENV SHARD_ALLOCATION_AWARENESS_ATTR ""
+# Kubernetes requires swap is turned off, so memory lock is redundant
+ENV MEMORY_LOCK false
+ENV REPO_LOCATIONS ""
+ENV DISCOVERY_SERVICE elasticsearch-discovery
+
+# Volume for Elasticsearch data
+VOLUME ["/data"]
+
+RUN chown elasticsearch:elasticsearch -R /usr/share/elasticsearch /data
 USER elasticsearch
+
+CMD ["/run.sh"]
