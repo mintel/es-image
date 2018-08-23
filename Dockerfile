@@ -12,17 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.3.1
+FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.3.2
 
 LABEL vendor="Mintel"
-LABEL version="6.3.1"
+LABEL version="6.3.2"
 LABEL maintainer "fciocchetti@mintel.com"
 
 
 # Export HTTP & Transport
 EXPOSE 9200 9300
 
-ENV ES_VERSION 6.3.1
+ENV ES_VERSION 6.3.2
 
 ENV PATH /usr/share/elasticsearch/bin:$PATH
 
