@@ -73,10 +73,9 @@ else
     # the case for kubernetes for example, when 'runAsUser: 1000'
     # and 'fsGroup:1000' are defined in the pod's security context.
     $BASE/bin/elasticsearch $ES_EXTRA_ARGS
+
+    # Adding additional sleep, once ES recieves a SIGTERM, run.sh will continue to
+    # this point and wait for 5 seconds (stopping k8s from killing the POD before
+    # ES leader election is complete)
+    sleep 5
 fi
-
-
-# Adding additional sleeo, once ES recieves a SIGTERM, run.sh will continue to
-# this point and wait for 5 seconds (stopping k8s from killing the POD before
-# ES leader election is complete)
-sleep 5
