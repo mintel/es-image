@@ -55,11 +55,16 @@ ENV SHARD_ALLOCATION_AWARENESS_ATTR ""
 ENV MEMORY_LOCK false
 ENV REPO_LOCATIONS ""
 ENV DISCOVERY_SERVICE elasticsearch-discovery
+ENV NETWORK_ADDRESS_CACHE_TTL 3
+ENV NETWORK_ADDRESS_CACHE_NEGATIVE_TTL 10
+ENV ELASTIC_STOP_SLEEP 5
+ENV DISCOVERY_SERVICE elasticsearch-discovery
 
 # Volume for Elasticsearch data
 VOLUME ["/data"]
 
-RUN chown elasticsearch:elasticsearch -R /usr/share/elasticsearch /data
+RUN chown elasticsearch:elasticsearch -R /usr/share/elasticsearch /data && \
+    chown elasticsearch:elasticsearch -R /opt/jdk-10.0.2/conf
 USER elasticsearch
 
 CMD ["/run.sh"]
