@@ -2,6 +2,8 @@
 
 set -ex
 
+export NODE_NAME=${NODE_NAME:-${HOSTNAME}}
+
 BASE=/usr/share/elasticsearch
 
 # allow for memlock if enabled
@@ -49,17 +51,31 @@ if [ ! -z "${SHARD_ALLOCATION_AWARENESS_ATTR}" ]; then
     fi
 fi
 
+# configuration overrides
+if [ ! -z "${NETWORK_ADDRESS_CACHE_TTL}" ]; then
+    sed -i -e "s/#networkaddress.cache.ttl=-1/networkaddress.cache.ttl=${NETWORK_ADDRESS_CACHE_TTL}/" /opt/jdk-10.0.2/conf/security/java.security
+fi
+
+if [ ! -z "${NETWORK_ADDRESS_CACHE_NEGATIVE_TTL}" ]; then
+    sed -i -e ""s/networkaddress.cache.negative.ttl=10/networkaddress.cache.negative.ttl=${NETWORK_ADDRESS_CACHE_NEGATIVE_TTL}/"" /opt/jdk-10.0.2/conf/security/java.security
+fi
+
 # run
 if [[ $(whoami) == "root" ]]; then
     chown -R elasticsearch:elasticsearch $BASE
     chown -R elasticsearch:elasticsearch /data
     exec su-exec elasticsearch $BASE/bin/elasticsearch $ES_EXTRA_ARGS
 else
-    # the container's first process is not running as 'root', 
+    # the container's first process is not running as 'root',
     # it does not have the rights to chown. however, we may
     # assume that it is being ran as 'elasticsearch', and that
     # the volumes already have the right permissions. this is
     # the case for kubernetes for example, when 'runAsUser: 1000'
     # and 'fsGroup:1000' are defined in the pod's security context.
     $BASE/bin/elasticsearch $ES_EXTRA_ARGS
+
+    # Adding additional sleep, once ES recieves a SIGTERM, run.sh will continue to
+    # this point and wait for 5 seconds (stopping k8s from killing the POD before
+    # ES leader election is complete)
+    sleep 5
 fi
