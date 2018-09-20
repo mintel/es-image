@@ -5,7 +5,7 @@ set -ex
 # SIGTERM-handler
 term_handler() {
   if [ $PID -ne 0 ]; then
-    kill -SIGTERM "$PID"
+    pkill -SIGTERM "$PID"
     wait "$PID"
     sleep 10
   fi
