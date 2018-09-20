@@ -89,5 +89,6 @@ fi
 
 PID="$!"
 
-echo "Setting ES pid to $PID"
-
+while true ; do
+   tail -f /dev/null & wait ${!}
+done
