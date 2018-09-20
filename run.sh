@@ -2,6 +2,18 @@
 
 set -ex
 
+# SIGTERM-handler
+term_handler() {
+  if [ $PID -ne 0 ]; then
+    kill -SIGTERM "$PID"
+    wait "$PID"
+    sleep 10
+  fi
+  exit 0;
+}
+
+export NODE_NAME=${NODE_NAME:-${HOSTNAME}}
+
 BASE=/usr/share/elasticsearch
 
 # allow for memlock if enabled
@@ -49,11 +61,22 @@ if [ ! -z "${SHARD_ALLOCATION_AWARENESS_ATTR}" ]; then
     fi
 fi
 
+# configuration overrides
+if [ ! -z "${NETWORK_ADDRESS_CACHE_TTL}" ]; then
+    sed -i -e "s/#networkaddress.cache.ttl=-1/networkaddress.cache.ttl=${NETWORK_ADDRESS_CACHE_TTL}/" /opt/jdk-10.0.2/conf/security/java.security
+fi
+
+if [ ! -z "${NETWORK_ADDRESS_CACHE_NEGATIVE_TTL}" ]; then
+    sed -i -e ""s/networkaddress.cache.negative.ttl=10/networkaddress.cache.negative.ttl=${NETWORK_ADDRESS_CACHE_NEGATIVE_TTL}/"" /opt/jdk-10.0.2/conf/security/java.security
+fi
+
+trap 'kill ${!}; term_handler' SIGTERM
+
 # run
 if [[ $(whoami) == "root" ]]; then
     chown -R elasticsearch:elasticsearch $BASE
     chown -R elasticsearch:elasticsearch /data
-    exec su-exec elasticsearch $BASE/bin/elasticsearch $ES_EXTRA_ARGS
+    exec su-exec elasticsearch $BASE/bin/elasticsearch $ES_EXTRA_ARGS &
 else
     # the container's first process is not running as 'root',
     # it does not have the rights to chown. however, we may
@@ -61,5 +84,10 @@ else
     # the volumes already have the right permissions. this is
     # the case for kubernetes for example, when 'runAsUser: 1000'
     # and 'fsGroup:1000' are defined in the pod's security context.
-    exec $BASE/bin/elasticsearch $ES_EXTRA_ARGS
+    $BASE/bin/elasticsearch $ES_EXTRA_ARGS &
 fi
+
+PID="$!"
+
+echo "Setting ES pid to $PID"
+
