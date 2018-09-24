@@ -62,6 +62,7 @@ ENV DISCOVERY_SERVICE elasticsearch-discovery
 # Volume for Elasticsearch data
 VOLUME ["/data"]
 
+# Run elasticsearch as unprivileged
 RUN chown elasticsearch:elasticsearch -R /usr/share/elasticsearch /data && \
     chown elasticsearch:elasticsearch -R /opt/jdk-10.0.2/conf
 USER elasticsearch

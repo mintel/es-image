@@ -17,9 +17,10 @@ while true ; do
   echo -e "Wait for node ${NODE_NAME} to become empty"
   SHARDS_ALLOCATION=$(curl --retry 3 -s -XGET 'http://localhost:9200/_cat/shards')
   if ! echo "${SHARDS_ALLOCATION}" | grep -E "${NODE_NAME}"; then
-    # Send Sigterm to elasticsearch once the relocation is finished
-    sleep 2
-    pkill -SIGTERM -P 1
+    # Send Sigterm to elasticsearch once the relocation is finished 
+    # Disabled since now the run.sh entrypoint will deal with sigterming the right process
+    # sleep 2
+    # pkill -SIGTERM -P 1
     break
   fi
   sleep 2
