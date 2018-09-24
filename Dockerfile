@@ -12,17 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.3.2
+FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.4.1
 
 LABEL vendor="Mintel"
-LABEL version="6.3.2"
+LABEL version="6.4.1"
 LABEL maintainer "fciocchetti@mintel.com"
+LABEL vcs-url "https://github.com/mintel/es-image"
 
+# Install Any extra package here
+ENV JQ_VERSION=1.5 \
+    JQ_SHA256=c6b3a7d7d3e7b70c6f51b706a3b90bd01833846c54d32ca32f0027f00226ff6d
+
+# jq
+RUN set -e \
+    && curl -L https://github.com/stedolan/jq/releases/download/jq-${JQ_VERSION}/jq-linux64 -o /tmp/jq \
+    && cd /tmp \
+    && echo "$JQ_SHA256  jq" | sha256sum -c \
+    && mv jq /usr/local/bin \
+    && chmod +x /usr/local/bin/jq
 
 # Export HTTP & Transport
 EXPOSE 9200 9300
 
-ENV ES_VERSION 6.3.2
+ENV ES_VERSION 6.4.1
 
 ENV PATH /usr/share/elasticsearch/bin:$PATH
 
