@@ -2,17 +2,22 @@
 
 set -ex
 
+export POST_TERM_WAIT=${POST_TERM_WAIT:-15}
+
 # SIGTERM-handler
 term_handler() {
   if [ $PID -ne 0 ]; then
-    pkill -SIGTERM "$PID"
+    set +e
+    kill -15 "$PID" # SIGTERM
     wait "$PID"
-    sleep 10
+    echo "Sleeping $POST_TERM_WAIT Seconds before exiting the term_handler"
+    sleep $POST_TERM_WAIT
+    set -e
   fi
   exit 0;
+  #exit 143; # 128 + 15 -- SIGTERM
 }
 
-export NODE_NAME=${NODE_NAME:-${HOSTNAME}}
 
 BASE=/usr/share/elasticsearch
 
@@ -21,9 +26,11 @@ if [ "$MEMORY_LOCK" == "true" ]; then
     ulimit -l unlimited
 fi
 
+NODE_NAME=${NODE_NAME:-${HOSTNAME}}
+
 # Set a random node name if not set.
 if [ -z "${NODE_NAME}" ]; then
-	NODE_NAME=${HOSTNAME}
+	NODE_NAME=$(uuidgen)
 fi
 export NODE_NAME=${NODE_NAME}
 
@@ -48,6 +55,8 @@ if [ ! -z "${ES_PLUGINS_INSTALL}" ]; then
    IFS=$OLDIFS
 fi
 
+# Configure Shard Allocation Awareness
+# XXX: If runnig kubernetes and kubernetes is runnign in the cloud -> Fetch zone from node 
 if [ ! -z "${SHARD_ALLOCATION_AWARENESS_ATTR}" ]; then
     # this will map to a file like  /etc/hostname => /dockerhostname so reading that file will get the
     #  container hostname
@@ -62,31 +71,22 @@ if [ ! -z "${SHARD_ALLOCATION_AWARENESS_ATTR}" ]; then
 fi
 
 # configuration overrides
+# CONF directory and files need to be writable by the user running the container
+
+## DNS Timers
 if [ ! -z "${NETWORK_ADDRESS_CACHE_TTL}" ]; then
-    sed -i -e "s/#networkaddress.cache.ttl=-1/networkaddress.cache.ttl=${NETWORK_ADDRESS_CACHE_TTL}/" /opt/jdk-10.0.2/conf/security/java.security
+    sed -i -e "s/#networkaddress.cache.ttl=.*/networkaddress.cache.ttl=${NETWORK_ADDRESS_CACHE_TTL}/" /opt/jdk-10.0.2/conf/security/java.security
 fi
 
 if [ ! -z "${NETWORK_ADDRESS_CACHE_NEGATIVE_TTL}" ]; then
-    sed -i -e ""s/networkaddress.cache.negative.ttl=10/networkaddress.cache.negative.ttl=${NETWORK_ADDRESS_CACHE_NEGATIVE_TTL}/"" /opt/jdk-10.0.2/conf/security/java.security
+    sed -i -e ""s/networkaddress.cache.negative.ttl=.*/networkaddress.cache.negative.ttl=${NETWORK_ADDRESS_CACHE_NEGATIVE_TTL}/"" /opt/jdk-10.0.2/conf/security/java.security
 fi
 
+# Trap the TERM Signals
 trap 'kill ${!}; term_handler' SIGTERM
 
-# run
-if [[ $(whoami) == "root" ]]; then
-    chown -R elasticsearch:elasticsearch $BASE
-    chown -R elasticsearch:elasticsearch /data
-    exec su-exec elasticsearch $BASE/bin/elasticsearch $ES_EXTRA_ARGS &
-else
-    # the container's first process is not running as 'root',
-    # it does not have the rights to chown. however, we may
-    # assume that it is being ran as 'elasticsearch', and that
-    # the volumes already have the right permissions. this is
-    # the case for kubernetes for example, when 'runAsUser: 1000'
-    # and 'fsGroup:1000' are defined in the pod's security context.
-    $BASE/bin/elasticsearch $ES_EXTRA_ARGS &
-fi
-
+# run Elasticsearch in the background
+$BASE/bin/elasticsearch $ES_EXTRA_ARGS &
 PID="$!"
 
 while true ; do
