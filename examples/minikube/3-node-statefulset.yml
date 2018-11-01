@@ -1,0 +1,134 @@
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: elasticsearch-node
+  namespace: monitoring
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+      role: node
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-node
+  namespace: monitoring
+  labels:
+    app: elasticsearch
+    role: data
+spec:
+  selector:
+    app: elasticsearch
+    role: node
+  ports:
+    - name: http
+      port: 9200
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch-node
+  namespace: monitoring
+  labels:
+    app: elasticsearch
+    role: node
+spec:
+  serviceName: elasticsearch-node
+  replicas: 3
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: elasticsearch
+      role: node
+  template:
+    metadata:
+      annotations:
+        roll_generation: "1"
+      labels:
+        app: elasticsearch
+        role: node
+    spec:
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+      terminationGracePeriodSeconds: 180
+      containers:
+        - name: elasticsearch
+          image: mintel/elasticsearch:v6.4.1-1
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/start-local-routing.sh"]
+            preStop:
+              exec:
+                command: ["/stop-local-routing.sh"]
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: RECOVERY_MAX_BYTES
+              value: 20mb
+            - name: CLUSTER_NAME
+              value: logs
+            - name: DISCOVERY_SERVICE
+              value: "elasticsearch-discovery.monitoring.svc.cluster.local"
+            - name: MINIMUM_NUMBER_OF_MASTERS
+              value: "2"
+            - name: NODE_MASTER
+              value: "false"
+            - name: NODE_INGEST
+              value: "true"
+            - name: NODE_DATA
+              value: "true"
+            - name: HTTP_ENABLE
+              value: "true"
+            - name: NETWORK_HOST
+              value: "0.0.0.0"
+            - name: ES_JAVA_OPTS
+              value: -Xms256m -Xmx256m
+            - name: POST_TERM_WAIT
+              value: "5"
+            - name: NETWORK_ADDRESS_CACHE_TTL
+              value: "2"
+            - name: NETWORK_ADDRESS_CACHE_NEGATIVE_TTL
+              value: "2"
+            # PROCESSORS NEED TO BE AN INTEGER
+            - name: PROCESSORS
+              value: "1"
+          resources:
+            requests:
+              cpu: 0.15
+              memory: 350Mi
+            limits:
+              cpu: 0.50
+              memory: 1024Mi
+          ports:
+            - containerPort: 9200
+              name: http
+            - containerPort: 9300
+              name: transport
+          readinessProbe:
+            httpGet:
+              path: /_cluster/health?local=true
+              port: 9200
+            initialDelaySeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: transport
+            initialDelaySeconds: 40
+            periodSeconds: 10
+          volumeMounts:
+            - name: storage
+              mountPath: /data
+      volumes:
+        - name: storage
+          emptyDir: {}
