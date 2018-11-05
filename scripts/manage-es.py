@@ -6,16 +6,42 @@ from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import ConnectionError
 from pprint import pprint
 
-## Environment from Kubernetes
+# Environment from Kubernetes
 
+## Recovery settings - TRANSIENT
 RECOVERY_MAX_BYTES=os.environ.get('MAX_BYTES', None)
+
+## How many concurrent incoming shard recoveries are allowed to happen on a node. Incoming recoveries are the recoveries where the target shard (most likely the replica unless a shard is relocating) is allocated on the node. Defaults to 2.
+## cluster.routing.allocation.node_concurrent_incoming_recoveries
+NODE_CONCURRENT_INCOMING_RECOVERIES=os.environ.get("NODE_CONCURRENT_INCOMING_RECOVERIES", None)
+
+## How many concurrent outgoing shard recoveries are allowed to happen on a node. Outgoing recoveries are the recoveries where the source shard (most likely the primary unless a shard is relocating) is allocated on the node. Defaults to 2.
+## cluster.routing.allocation.node_concurrent_outgoing_recoveries
+NODE_CONCURRENT_OUTGOING_RECOVERIES=os.environ.get("NODE_CONCURRENT_OUTGOING_RECOVERIES", None)
+
+## While the recovery of replicas happens over the network, the recovery of an unassigned primary after node restart uses data from the local disk. These should be fast so more initial primary recoveries can happen in parallel on the same node. Defaults to 4.
+## cluster.routing.allocation.node_initial_primaries_recoveries
+NODE_INITIAL_PRIMARIES_RECOVERIES=os.environ.get("NODE_INITIAL_PRIMARIES_RECOVERIES", None)
+
+
+## Performance Settings - PERSISTENT
+
+## The cluster.routing.allocation.cluster_concurrent_rebalance property determines the number of shards allowed for concurrent rebalance (default 2). 
+## This property needs to be set appropriately depending on the hardware being used, for example the number of CPUs, IO capacity, etc. 
+## If this property is not set appropriately, it can impact the performance of ES indexing.
+CLUSTER_CONCURRENT_REBALANCE=os.environ.get('CLUSTER_CONCURRENT_REBALANCE', None)
+
+
+
+
+## ENV Settings
 DISCOVERY_SERVICE=os.environ.get("DISCOVERY_SERVICE", None)
 NODE_NAME=os.environ.get("NODE_NAME", None)
 
-# Allowed Modes: 
-#   None ( default ) - no Management of maintenance mode, pod will just be stopped by Kubernetes
-#   Drain ( Drain local node ) - The node will be Drained ( moving all shards ) before proceeding with stop - NOTE: This need to finish before GracePeriod expire
-#   Allocation ( Disable shard allocation ) - This will disable shards allocation as described https://www.elastic.co/guide/en/elasticsearch/reference/current/rolling-upgrades.html
+## Allowed Modes: 
+##  * None ( default ) - no Management of maintenance mode, pod will just be stopped by Kubernetes
+##  * Drain ( Drain local node ) - The node will be Drained ( moving all shards ) before proceeding with stop - NOTE: This need to finish before GracePeriod expire
+##  * Allocation ( Disable shard allocation ) - This will disable shards allocation as described https://www.elastic.co/guide/en/elasticsearch/reference/current/rolling-upgrades.html
 MAINTENANCE_MODE=os.environ.get("MAINTENANCE_MODE", None)
 
 
@@ -157,7 +183,16 @@ def post_start_data_node(client,mode,node):
     # - undrain Node
     # - Wait for 0 Initializing or Relocating Shards ( Unassigned shards should be ok if this is cold startup of an elasticsearch cluster )
     # - remove temporary recovery settings
-    pass
+    pprint('Wait for node %s to join the cluster' % node)
+    wait_for_node_in_cluster(client,node)
+    pprint('Set recovery settings')
+    if RECOVERY_MAX_BYTES: set_setting(client,"transient","indices.recovery.max_bytes_per_sec",RECOVERY_MAX_BYTES) 
+    pprint('UnDrain Local Node %s' % node)
+    unset_setting(client,"transient","cluster.routing.allocation.exclude._name")
+    pprint('Wait for RELOCATING and INITIALIZING Shards to drop to 0')
+    wait_for_no_relocating_or_initializing_shards(client)
+    pprint('Reset Recovery Settings')
+    unset_setting(client,"transient","indices.recovery.max_bytes_per_sec")
   else:
     raise Exception("Not support mode %s requested for pre_stop_data_node" % mode)
 
