@@ -62,10 +62,10 @@ spec:
           lifecycle:
             postStart:
               exec:
-                command: ["/start-local-routing.sh"]
+                command: ["/start-data-node.sh"]
             preStop:
               exec:
-                command: ["/stop-local-routing.sh"]
+                command: ["/stop-data-node.sh"]
           env:
             - name: NAMESPACE
               valueFrom:
