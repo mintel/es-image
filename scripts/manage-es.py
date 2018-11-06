@@ -170,12 +170,18 @@ def post_start_data_node(client,mode,node):
     wait_for_node_in_cluster(client,node)
     pprint('Set recovery settings')
     if RECOVERY_MAX_BYTES: set_setting(client,"transient","indices.recovery.max_bytes_per_sec",RECOVERY_MAX_BYTES) 
+    if NODE_CONCURRENT_INCOMING_RECOVERIES: set_setting(client,"transient","cluster.routing.allocation.node_concurrent_incoming_recoveries",NODE_CONCURRENT_INCOMING_RECOVERIES)
+    if NODE_CONCURRENT_OUTGOING_RECOVERIES: set_setting(client,"transient","cluster.routing.allocation.node_concurrent_outgoing_recoveries",NODE_CONCURRENT_OUTGOING_RECOVERIES)
+    if NODE_INITIAL_PRIMARIES_RECOVERIES: set_setting(client,"transient","cluster.routing.allocation.node_initial_primaries_recoveries",NODE_INITIAL_PRIMARIES_RECOVERIES)
     pprint('Enable Shard Allocation')
     enable_shard_allocation(client)
     pprint('Wait for RELOCATING and INITIALIZING Shards to drop to 0')
     wait_for_no_relocating_or_initializing_shards(client)
     pprint('Reset Recovery Settings')
-    unset_setting(client,"transient","indices.recovery.max_bytes_per_sec")
+    if RECOVERY_MAX_BYTES: unset_setting(client,"transient","indices.recovery.max_bytes_per_sec")
+    if NODE_CONCURRENT_INCOMING_RECOVERIES: unset_setting(client,"transient","cluster.routing.allocation.node_concurrent_incoming_recoveries")
+    if NODE_CONCURRENT_OUTGOING_RECOVERIES: unset_setting(client,"transient","cluster.routing.allocation.node_concurrent_outgoing_recoveries")
+    if NODE_INITIAL_PRIMARIES_RECOVERIES: unset_setting(client,"transient","cluster.routing.allocation.node_initial_primaries_recoveries")
   elif mode.upper() == "DRAIN":
     # Sequence:
     # - wait for node to join cluster
@@ -187,12 +193,18 @@ def post_start_data_node(client,mode,node):
     wait_for_node_in_cluster(client,node)
     pprint('Set recovery settings')
     if RECOVERY_MAX_BYTES: set_setting(client,"transient","indices.recovery.max_bytes_per_sec",RECOVERY_MAX_BYTES) 
+    if NODE_CONCURRENT_INCOMING_RECOVERIES: set_setting(client,"transient","cluster.routing.allocation.node_concurrent_incoming_recoveries",NODE_CONCURRENT_INCOMING_RECOVERIES)
+    if NODE_CONCURRENT_OUTGOING_RECOVERIES: set_setting(client,"transient","cluster.routing.allocation.node_concurrent_outgoing_recoveries",NODE_CONCURRENT_OUTGOING_RECOVERIES)
+    if NODE_INITIAL_PRIMARIES_RECOVERIES: set_setting(client,"transient","cluster.routing.allocation.node_initial_primaries_recoveries",NODE_INITIAL_PRIMARIES_RECOVERIES)
     pprint('UnDrain Local Node %s' % node)
     unset_setting(client,"transient","cluster.routing.allocation.exclude._name")
     pprint('Wait for RELOCATING and INITIALIZING Shards to drop to 0')
     wait_for_no_relocating_or_initializing_shards(client)
     pprint('Reset Recovery Settings')
-    unset_setting(client,"transient","indices.recovery.max_bytes_per_sec")
+    if RECOVERY_MAX_BYTES: unset_setting(client,"transient","indices.recovery.max_bytes_per_sec")
+    if NODE_CONCURRENT_INCOMING_RECOVERIES: unset_setting(client,"transient","cluster.routing.allocation.node_concurrent_incoming_recoveries")
+    if NODE_CONCURRENT_OUTGOING_RECOVERIES: unset_setting(client,"transient","cluster.routing.allocation.node_concurrent_outgoing_recoveries")
+    if NODE_INITIAL_PRIMARIES_RECOVERIES: unset_setting(client,"transient","cluster.routing.allocation.node_initial_primaries_recoveries")
   else:
     raise Exception("Not support mode %s requested for pre_stop_data_node" % mode)
 
@@ -212,10 +224,17 @@ def pre_stop_data_node(client,mode,node):
     # - Wait for 0 shards on this node
     pprint('Setting Recovery Max Bytes during drain operation')
     if RECOVERY_MAX_BYTES: set_setting(client,"transient","indices.recovery.max_bytes_per_sec",RECOVERY_MAX_BYTES)
+    if NODE_CONCURRENT_INCOMING_RECOVERIES: set_setting(client,"transient","cluster.routing.allocation.node_concurrent_incoming_recoveries",NODE_CONCURRENT_INCOMING_RECOVERIES)
+    if NODE_CONCURRENT_OUTGOING_RECOVERIES: set_setting(client,"transient","cluster.routing.allocation.node_concurrent_outgoing_recoveries",NODE_CONCURRENT_OUTGOING_RECOVERIES)
+    if NODE_INITIAL_PRIMARIES_RECOVERIES: set_setting(client,"transient","cluster.routing.allocation.node_initial_primaries_recoveries",NODE_INITIAL_PRIMARIES_RECOVERIES)
     pprint('Drain Local Node %s' % node)
     set_setting(client,"transient","cluster.routing.allocation.exclude._name",node)
     pprint('Wait for RELOCATING and INITIALIZING Shards to drop to 0')
     wait_for_no_relocating_or_initializing_shards(client)
+    if RECOVERY_MAX_BYTES: unset_setting(client,"transient","indices.recovery.max_bytes_per_sec")
+    if NODE_CONCURRENT_INCOMING_RECOVERIES: unset_setting(client,"transient","cluster.routing.allocation.node_concurrent_incoming_recoveries")
+    if NODE_CONCURRENT_OUTGOING_RECOVERIES: unset_setting(client,"transient","cluster.routing.allocation.node_concurrent_outgoing_recoveries")
+    if NODE_INITIAL_PRIMARIES_RECOVERIES: unset_setting(client,"transient","cluster.routing.allocation.node_initial_primaries_recoveries")
   else:
     raise Exception("Not support mode %s requested for pre_stop_data_node" % mode)
     
