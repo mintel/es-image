@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: persistent-settings
+  namespace: monitoring
+data:
+  settings.json: |
+    {
+            "indices.recovery.max_bytes_per_sec" : "50mb"
+    }
