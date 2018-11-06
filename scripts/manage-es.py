@@ -31,6 +31,10 @@ NODE_INITIAL_PRIMARIES_RECOVERIES=os.environ.get("NODE_INITIAL_PRIMARIES_RECOVER
 ## If this property is not set appropriately, it can impact the performance of ES indexing.
 CLUSTER_CONCURRENT_REBALANCE=os.environ.get('CLUSTER_CONCURRENT_REBALANCE', None)
 
+## Persisntent Settings file
+## 
+## JSON file location containing an arbitrary set of persistent settings 
+PERSITENT_SETTINGS_FILE_PATH=os.environ.get('PERSITENT_SETTINGS_FILE_PATH', None)
 
 
 
@@ -239,6 +243,18 @@ def pre_stop_data_node(client,mode,node):
     raise Exception("Not support mode %s requested for pre_stop_data_node" % mode)
     
 
+def set_persitent_settings(client, srcfile):
+  try:
+    settings=json.load(open(srfcile))
+  except:
+    raise Exception("Failed to Load json settings file %s" % srcfile)
+
+  for key,value in settings.items():
+    if key == "persistent" or key == "transient":
+      continue
+
+    set_setting(client,"persistent",key,value)
+
 
 ####
 
@@ -272,6 +288,10 @@ def main():
   elif action == "persitent-settings":
     pprint("Current Settings:")
     pprint(client.cluster.get_settings())
+    if  PERSITENT_SETTINGS_FILE_PATH: 
+      set_persistent_settings(client, PERSITENT_SETTINGS_FILE_PATH)
+    else:
+      pprint("No persistent settings file available - skipping")
   else:
     raise Exception("No correct action specified")
 
