@@ -1,4 +1,4 @@
 #!/bin/bash
 
-python /manager-es.py persitent-settings
-python /manager-es.py post-start-data
+python /manage-es.py persitent-settings
+python /manage-es.py post-start-data

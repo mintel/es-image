@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python /manager-es.py pre-stop-data
+python /manage-es.py pre-stop-data
