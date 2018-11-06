@@ -265,6 +265,12 @@ def main():
   if len(sys.argv) != 2:
     raise Exception('Need to specify Action for the script : ( post-start-data , pre-stop-data , post-start-master , pre-stop-master , persistent-settings )')
 
+  if not NODE_NAME:
+    raise Exception('NODE_NAME environment variable need to be specified')
+
+  if not DISCOVERY_SERVICE:
+    raise Exception('DISCOVERY_SERVICE environment variable need to be specified')
+
   action=sys.argv[1]
 
   client=get_client()
