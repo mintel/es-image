@@ -5,8 +5,13 @@ import json
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import ConnectionError
 from pprint import pprint
+from datetime import datetime
+
 
 # Environment from Kubernetes
+
+WAIT_FOR_NODE_IN_CLUSTER=os.environ.get('WAIT_FOR_NODE_IN_CLUSTER', 180)
+WAIT_FOR_NO_SHARDS_RELOCATING=os.environ.get('WAIT_FOR_NO_SHARDS_RELOCATING', 1800)
 
 ## Recovery settings - TRANSIENT
 RECOVERY_MAX_BYTES=os.environ.get('MAX_BYTES', None)
@@ -35,8 +40,6 @@ CLUSTER_CONCURRENT_REBALANCE=os.environ.get('CLUSTER_CONCURRENT_REBALANCE', None
 ## 
 ## JSON file location containing an arbitrary set of persistent settings 
 PERSITENT_SETTINGS_FILE_PATH=os.environ.get('PERSITENT_SETTINGS_FILE_PATH', None)
-
-
 
 ## ENV Settings
 DISCOVERY_SERVICE=os.environ.get("DISCOVERY_SERVICE", None)
@@ -126,7 +129,7 @@ def is_node_in_cluster(client,node):
   else:
     return False
 
-def wait_for_node_in_cluster(client,node,timeout=90):
+def wait_for_node_in_cluster(client,node,timeout=WAIT_FOR_NODE_IN_CLUSTER):
   for _ in range(timeout):
     if is_node_in_cluster(client,node):
       return True
@@ -144,19 +147,26 @@ def is_any_shard_relocating_or_initializing(client):
   else:
     return False
 
-def wait_for_no_relocating_or_initializing_shards(client):
+def wait_for_no_relocating_or_initializing_shards(client,timeout):
   # Return true if for 5 checks no shards are in either relocating or initializing state
   count=0
+  starttime=datetime.now()
   while True:
-    if is_any_shard_relocating_or_initializing(client):
-      count = 0
-    else:
-      count += 1
+    while True:
+      if is_any_shard_relocating_or_initializing(client):
+        count = 0
+      else:
+        count += 1
 
-    if count == 5:
-      break
+      if count == 5:
+        break
+      else:
+        # Are we stuck ? Timeout -> exception
+        delta=datetime.now()-starttime
+        if delta.seconds > timeout:
+          raise Exception("Waiting for no relocating or initializnig shards is taking longer then %s seconds - Timeout" % timeout)
 
-    time.sleep(2)
+      time.sleep(2)
   
 
   
@@ -180,7 +190,7 @@ def post_start_data_node(client,mode,node):
     pprint('Enable Shard Allocation')
     enable_shard_allocation(client)
     pprint('Wait for RELOCATING and INITIALIZING Shards to drop to 0')
-    wait_for_no_relocating_or_initializing_shards(client)
+    wait_for_no_relocating_or_initializing_shards(client,WAIT_FOR_NO_SHARDS_RELOCATING)
     pprint('Reset Recovery Settings')
     if RECOVERY_MAX_BYTES: unset_setting(client,"transient","indices.recovery.max_bytes_per_sec")
     if NODE_CONCURRENT_INCOMING_RECOVERIES: unset_setting(client,"transient","cluster.routing.allocation.node_concurrent_incoming_recoveries")
@@ -203,7 +213,7 @@ def post_start_data_node(client,mode,node):
     pprint('UnDrain Local Node %s' % node)
     unset_setting(client,"transient","cluster.routing.allocation.exclude._name")
     pprint('Wait for RELOCATING and INITIALIZING Shards to drop to 0')
-    wait_for_no_relocating_or_initializing_shards(client)
+    wait_for_no_relocating_or_initializing_shards(client,WAIT_FOR_NO_SHARDS_RELOCATING)
     pprint('Reset Recovery Settings')
     if RECOVERY_MAX_BYTES: unset_setting(client,"transient","indices.recovery.max_bytes_per_sec")
     if NODE_CONCURRENT_INCOMING_RECOVERIES: unset_setting(client,"transient","cluster.routing.allocation.node_concurrent_incoming_recoveries")
@@ -234,7 +244,7 @@ def pre_stop_data_node(client,mode,node):
     pprint('Drain Local Node %s' % node)
     set_setting(client,"transient","cluster.routing.allocation.exclude._name",node)
     pprint('Wait for RELOCATING and INITIALIZING Shards to drop to 0')
-    wait_for_no_relocating_or_initializing_shards(client)
+    wait_for_no_relocating_or_initializing_shards(client,WAIT_FOR_NO_SHARDS_RELOCATING)
     if RECOVERY_MAX_BYTES: unset_setting(client,"transient","indices.recovery.max_bytes_per_sec")
     if NODE_CONCURRENT_INCOMING_RECOVERIES: unset_setting(client,"transient","cluster.routing.allocation.node_concurrent_incoming_recoveries")
     if NODE_CONCURRENT_OUTGOING_RECOVERIES: unset_setting(client,"transient","cluster.routing.allocation.node_concurrent_outgoing_recoveries")
@@ -243,9 +253,9 @@ def pre_stop_data_node(client,mode,node):
     raise Exception("Not support mode %s requested for pre_stop_data_node" % mode)
     
 
-def set_persitent_settings(client, srcfile):
+def set_persistent_settings(client, srcfile):
   try:
-    settings=json.load(open(srfcile))
+    settings=json.load(open(srcfile))
   except:
     raise Exception("Failed to Load json settings file %s" % srcfile)
 
