@@ -341,8 +341,6 @@ def set_persistent_settings(client, srcfile):
 ####
 
 
-# Main
-
 def main():
     if len(sys.argv) != 2:
         raise Exception(
@@ -389,4 +387,5 @@ def main():
     sys.exit(0)
 
 
-main()
+if __name__ == "__main__":
+    main()
