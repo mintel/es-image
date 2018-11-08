@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.4.1
+FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.4.3
 
 LABEL vendor="Mintel"
-LABEL version="6.4.1"
+LABEL version="6.4.3"
 LABEL maintainer "fciocchetti@mintel.com"
 LABEL vcs-url "https://github.com/mintel/es-image"
 
@@ -60,7 +60,7 @@ RUN set -e \
 # Export HTTP & Transport
 EXPOSE 9200 9300
 
-ENV ES_VERSION=6.4.1 \
+ENV ES_VERSION=6.4.3 \
     PATH=/usr/share/elasticsearch/bin:$PATH \
     ES_JAVA_OPTS="-Xms512m -Xmx512m" \
     CLUSTER_NAME=elasticsearch-default \

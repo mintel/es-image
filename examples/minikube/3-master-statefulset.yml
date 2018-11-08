@@ -60,7 +60,7 @@ spec:
       terminationGracePeriodSeconds: 180
       containers:
         - name: elasticsearch
-          image: primeroz/es-image:v6.4.1-10
+          image: primeroz/es-image:v6.4.3-0
           lifecycle:
             postStart:
               exec:
