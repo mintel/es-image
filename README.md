@@ -124,7 +124,23 @@ push persistent settings to the cluster
 
 ### Elasticsearch settings environment variables
 
+#### Transient settings set during Maintenance 
+* WAIT_FOR_NODE_IN_CLUSTER - default: 180 - Seconds to wait for NODE to rejoin cluster 
+* WAIT_FOR_NO_SHARDS_RELOCATING - default: 1800 - Seconds to wait for cluster to have no Relocating nor Initializing shards 
+* NODE_CONCURRENT_INCOMING_RECOVERIES - default: ES Version defaut - set cluster.routing.allocation.node_concurrent_incoming_recoveries
+* NODE_CONCURRENT_OUTGOING_RECOVERIES - default: ES Version defaut - set cluster.routing.allocation.node_concurrent_outgoing_recoveries
+* NODE_INITIAL_PRIMARIES_RECOVERIES - default: ES Version defaut - set cluster.routing.allocation.node_initial_primaries_recoveries
+* CLUSTER_CONCURRENT_REBALANCE - default: ES Version defaut - set cluster.routing.allocation.cluster_concurrent_rebalance
 
+#### Persistent Settings set by every node at startup 
+* PERSITENT_SETTINGS_FILE_PATH - path to a JSON file of persistent settings 
+
+#### Other Startup Settings
+* DISCOVERY_SERVICE - Elasticsearch discovery URL
+* MAINTENANCE_MODE 
+  * None ( default ) - no Management of maintenance mode, pod will just be stopped by Kubernetes
+  * Drain ( Drain local node ) - The node will be Drained ( moving all shards ) before proceeding with stop - NOTE: This need to finish before GracePeriod expire
+  * Allocation ( Disable shard allocation ) - This will disable shards allocation as described https://www.elastic.co/guide/en/elasticsearch/reference/current/rolling-upgrades.html
 
 ## run in minikube example
 
