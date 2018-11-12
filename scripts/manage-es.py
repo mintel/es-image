@@ -10,9 +10,9 @@ from datetime import datetime
 
 # Environment from Kubernetes
 
-WAIT_FOR_NODE_IN_CLUSTER = os.environ.get('WAIT_FOR_NODE_IN_CLUSTER', 180)
-WAIT_FOR_NO_SHARDS_RELOCATING = os.environ.get(
-    'WAIT_FOR_NO_SHARDS_RELOCATING', 1800)
+WAIT_FOR_NODE_IN_CLUSTER = int(os.environ.get('WAIT_FOR_NODE_IN_CLUSTER', 180))
+WAIT_FOR_NO_SHARDS_RELOCATING = int(os.environ.get(
+    'WAIT_FOR_NO_SHARDS_RELOCATING', 1800))
 
 # Recovery settings - TRANSIENT
 RECOVERY_MAX_BYTES = os.environ.get('MAX_BYTES', None)
