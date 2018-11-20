@@ -55,6 +55,7 @@ spec:
       securityContext:
         runAsUser: 1000
         fsGroup: 1000
+      serviceAccountName: elasticsearch
       terminationGracePeriodSeconds: 180
       containers:
         - name: elasticsearch
@@ -75,6 +76,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: KUBERNETES_SHARD_ALLOCATION_AWARENESS
+              value: "True"
             - name: RECOVERY_MAX_BYTES
               value: 20mb
             - name: CLUSTER_NAME

@@ -1,8 +1,11 @@
-#!/bin/sh
+#!/bin/bash
 
 set -ex
 
 export POST_TERM_WAIT=${POST_TERM_WAIT:-15}
+
+# https://stackoverflow.com/questions/1527049/how-can-i-join-elements-of-an-array-in-bash
+function join_by { local IFS="$1"; shift; echo "$*"; }
 
 # SIGTERM-handler
 term_handler() {
@@ -56,7 +59,6 @@ if [ ! -z "${ES_PLUGINS_INSTALL}" ]; then
 fi
 
 # Configure Shard Allocation Awareness
-# XXX: If runnig kubernetes and kubernetes is runnign in the cloud -> Fetch zone from node 
 if [ ! -z "${SHARD_ALLOCATION_AWARENESS_ATTR}" ]; then
     # this will map to a file like  /etc/hostname => /dockerhostname so reading that file will get the
     #  container hostname
@@ -68,6 +70,45 @@ if [ ! -z "${SHARD_ALLOCATION_AWARENESS_ATTR}" ]; then
     if [ "$NODE_MASTER" == "true" ]; then
         echo "cluster.routing.allocation.awareness.attributes: ${SHARD_ALLOCATION_AWARENESS}" >> $BASE/config/elasticsearch.yml
     fi
+elif [ ! -z "${KUBERNETES_SHARD_ALLOCATION_AWARENESS}" ]; then
+  # Configure Kubernetes Aware shard allocation Awareness
+  # Fetches labels from Node running this pod
+  # ATTRS:
+  #  - failure-domain.beta.kubernetes.io/zone -> zone
+  #  - kubernetes.io/hostname -> server
+  KUBE_TOKEN=$(</var/run/secrets/kubernetes.io/serviceaccount/token)
+  
+  echo "Fetching Node Informations" >2   
+  labels=$(curl --fail --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt -sS -H "Authorization: Bearer $KUBE_TOKEN" \
+           https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_PORT_443_TCP_PORT/api/v1/nodes/$WORKER_NODE_NAME | jq -r '.metadata.labels')
+
+  declare -A attrs
+
+  attrs[server]=$(echo $labels | jq '."kubernetes.io/hostname"' -r)
+  attrs[zone]=$(echo $labels | jq '."failure-domain.beta.kubernetes.io/zone"' -r)
+  
+
+  # For each defined attribute set the required config in elasticsearch.yml and delete undefined attributes
+  for attr in "${!attrs[@]}"; do
+    if [ "${attrs[$attr]}" != "null" ]; then
+      if [ "$NODE_DATA" == "true" ]; then
+        echo "node.attr.$attr: ${attrs[$attr]}" >> $BASE/config/elasticsearch.yml
+      fi
+    else 
+      unset attrs[$attr] 
+    fi
+  done
+
+  if [ ${#attrs[@]} -gt 0 ]; then
+    attributes=$(join_by , "${!attrs[@]}")
+    if [ "$NODE_MASTER" == "true" ]; then
+      echo "cluster.routing.allocation.awareness.attributes: ${attributes}" >> $BASE/config/elasticsearch.yml
+    fi
+  fi
+
+  
+
+  echo ""
 fi
 
 # configuration overrides
