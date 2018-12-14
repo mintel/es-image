@@ -130,6 +130,13 @@ trap 'kill ${!}; term_handler' SIGTERM
 $BASE/bin/elasticsearch $ES_EXTRA_ARGS &
 PID="$!"
 
+if [ ! -z "${ES_GCS_CREDENTIALS_FILE}" ]; then
+  until $BASE/bin/elasticsearch-keystore add-file gcs.client.default.credentials_file ${ES_GCS_CREDENTIALS_FILE}; do
+    echo "failed to add keystore file ${file}, retrying in 3s"
+    sleep 3
+  done
+fi
+
 while true ; do
    tail -f /dev/null & wait ${!}
 done
