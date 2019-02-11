@@ -19,6 +19,9 @@ LABEL version="6.4.3"
 LABEL maintainer "fciocchetti@mintel.com"
 LABEL vcs-url "https://github.com/mintel/es-image"
 
+# Copy configuration
+COPY config /usr/share/elasticsearch/config
+
 # Run elasticsearch as unprivileged
 RUN chown elasticsearch:elasticsearch -R /usr/share/elasticsearch && \
     mkdir -p /data && \
@@ -55,9 +58,6 @@ RUN set -e \
 
 # Export HTTP & Transport
 EXPOSE 9200 9300
-
-# Copy configuration
-COPY config /usr/share/elasticsearch/config
 
 ENV ES_VERSION=6.4.3 \
     PATH=/usr/share/elasticsearch/bin:$PATH \
