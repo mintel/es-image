@@ -104,43 +104,46 @@ push persistent settings to the cluster
 
 ### Startup Environment variables
 
-* [CLUSTER_NAME](https://www.elastic.co/guide/en/elasticsearch/reference/current/important-settings.html#cluster.name)
-* [NODE_NAME](https://www.elastic.co/guide/en/elasticsearch/reference/current/important-settings.html#node.name)
-* [NODE_MASTER](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-node.html#master-node)
-* [NODE_DATA](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-node.html#data-node)
-* [NETWORK_HOST](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-network.html#network-interface-values)
-* [HTTP_ENABLE](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-http.html#_settings_2)
-* [HTTP_CORS_ENABLE](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-http.html#_settings_2)
-* [HTTP_CORS_ALLOW_ORIGIN](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-http.html#_settings_2)
-* [NUMBER_OF_MASTERS](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-discovery-zen.html#master-election)
-* [MAX_LOCAL_STORAGE_NODES](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-node.html#max-local-storage-nodes)
-* [ES_JAVA_OPTS](https://www.elastic.co/guide/en/elasticsearch/reference/current/heap-size.html)
-* [ES_PLUGINS_INSTALL](https://www.elastic.co/guide/en/elasticsearch/plugins/current/installation.html) - comma separated list of Elasticsearch plugins to be installed. Example: `ES_PLUGINS_INSTALL="repository-gcs,x-pack"`
-* [SHARD_ALLOCATION_AWARENESS](https://www.elastic.co/guide/en/elasticsearch/reference/current/allocation-awareness.html#CO287-1)
-* [SHARD_ALLOCATION_AWARENESS_ATTR](https://www.elastic.co/guide/en/elasticsearch/reference/current/allocation-awareness.html#CO287-1)
-* KUBERNETES_SHARD_ALLOCATION_AWARENESS - Enable SHARD Allocation awareness for a Kubernetes Cluster using labels
+* [CLUSTER\_NAME](https://www.elastic.co/guide/en/elasticsearch/reference/current/important-settings.html#cluster.name)
+* [NODE\_NAME](https://www.elastic.co/guide/en/elasticsearch/reference/current/important-settings.html#node.name)
+* [NODE\_MASTER](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-node.html#master-node)
+* [NODE\_DATA](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-node.html#data-node)
+* [NETWORK\_HOST](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-network.html#network-interface-values)
+* [HTTP\_ENABLE](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-http.html#_settings_2)
+* [HTTP\_CORS\_ENABLE](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-http.html#_settings_2)
+* [HTTP\_CORS\_ALLOW\_ORIGIN](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-http.html#_settings_2)
+* [NUMBER\_OF\_MASTERS](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-discovery-zen.html#master-election)
+* [MAX\_LOCAL\_STORAGE\_NODES](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-node.html#max-local-storage-nodes)
+* ES\_GCLOG\_FILE\_COUNT - Number of GC log files to keep in the rotation.
+* ES\_GCLOG\_FILE\_PATH - Location of main GC file (e.g. data/gc.log).
+* ES\_GCLOG\_FILE\_SIZE - Max size of each rolled GC log (e.g. 64m).
+* [ES\_JAVA\_OPTS](https://www.elastic.co/guide/en/elasticsearch/reference/current/heap-size.html)
+* [ES\_PLUGINS\_INSTALL](https://www.elastic.co/guide/en/elasticsearch/plugins/current/installation.html) - comma separated list of Elasticsearch plugins to be installed. Example: `ES_PLUGINS_INSTALL="repository-gcs,x-pack"`
+* [SHARD\_ALLOCATION\_AWARENESS](https://www.elastic.co/guide/en/elasticsearch/reference/current/allocation-awareness.html#CO287-1)
+* [SHARD\_ALLOCATION\_AWARENESS\_ATTR](https://www.elastic.co/guide/en/elasticsearch/reference/current/allocation-awareness.html#CO287-1)
+* KUBERNETES\_SHARD\_ALLOCATION\_AWARENESS - Enable SHARD Allocation awareness for a Kubernetes Cluster using labels
   * server = WORKER NODE NAME
 	* zone = Kubernetes failure domain zone ( Only for cloud )
-* [MEMORY_LOCK](https://www.elastic.co/guide/en/elasticsearch/reference/current/important-settings.html#bootstrap.memory_lock) - memory locking control - enable to prevent swap (default = `true`) .
-* [REPO_LOCATIONS](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-snapshots.html#_shared_file_system_repository) - list of registered repository locations. For example `"/backup"` (default = `[]`). The value of REPO_LOCATIONS is automatically wrapped within an `[]` and therefore should not be included in the variable declaration. To specify multiple repository locations simply specify a comma separated string for example `"/backup", "/backup2"`.
+* [MEMORY\_LOCK](https://www.elastic.co/guide/en/elasticsearch/reference/current/important-settings.html#bootstrap.memory_lock) - memory locking control - enable to prevent swap (default = `true`) .
+* [REPO\_LOCATIONS](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-snapshots.html#_shared_file_system_repository) - list of registered repository locations. For example `"/backup"` (default = `[]`). The value of REPO\_LOCATIONS is automatically wrapped within an `[]` and therefore should not be included in the variable declaration. To specify multiple repository locations simply specify a comma separated string for example `"/backup", "/backup2"`.
 * [PROCESSORS](https://github.com/elastic/elasticsearch-definitive-guide/pull/679/files) - allow elasticsearch to optimize for the actual number of available cpus (must be an integer - default = 1)
 
 ### Elasticsearch settings environment variables
 
 #### Transient settings set during Maintenance 
-* WAIT_FOR_NODE_IN_CLUSTER - default: 180 - Seconds to wait for NODE to rejoin cluster 
-* WAIT_FOR_NO_SHARDS_RELOCATING - default: 1800 - Seconds to wait for cluster to have no Relocating nor Initializing shards 
-* NODE_CONCURRENT_INCOMING_RECOVERIES - default: ES Version defaut - set cluster.routing.allocation.node_concurrent_incoming_recoveries
-* NODE_CONCURRENT_OUTGOING_RECOVERIES - default: ES Version defaut - set cluster.routing.allocation.node_concurrent_outgoing_recoveries
-* NODE_INITIAL_PRIMARIES_RECOVERIES - default: ES Version defaut - set cluster.routing.allocation.node_initial_primaries_recoveries
-* CLUSTER_CONCURRENT_REBALANCE - default: ES Version defaut - set cluster.routing.allocation.cluster_concurrent_rebalance
+* WAIT\_FOR\_NODE\_IN\_CLUSTER - default: 180 - Seconds to wait for NODE to rejoin cluster 
+* WAIT\_FOR\_NO\_SHARDS\_RELOCATING - default: 1800 - Seconds to wait for cluster to have no Relocating nor Initializing shards 
+* NODE\_CONCURRENT\_INCOMING\_RECOVERIES - default: ES Version defaut - set cluster.routing.allocation.node\_concurrent\_incoming\_recoveries
+* NODE\_CONCURRENT\_OUTGOING\_RECOVERIES - default: ES Version defaut - set cluster.routing.allocation.node\_concurrent\_outgoing\_recoveries
+* NODE\_INITIAL\_PRIMARIES\_RECOVERIES - default: ES Version defaut - set cluster.routing.allocation.node\_initial\_primaries\_recoveries
+* CLUSTER\_CONCURRENT\_REBALANCE - default: ES Version defaut - set cluster.routing.allocation.cluster\_concurrent\_rebalance
 
 #### Persistent Settings set by every node at startup 
-* PERSITENT_SETTINGS_FILE_PATH - path to a JSON file of persistent settings 
+* PERSITENT\_SETTINGS\_FILE\_PATH - path to a JSON file of persistent settings 
 
 #### Other Startup Settings
-* DISCOVERY_SERVICE - Elasticsearch discovery URL
-* MAINTENANCE_MODE 
+* DISCOVERY\_SERVICE - Elasticsearch discovery URL
+* MAINTENANCE\_MODE 
   * None ( default ) - no Management of maintenance mode, pod will just be stopped by Kubernetes
   * Drain ( Drain local node ) - The node will be Drained ( moving all shards ) before proceeding with stop - NOTE: This need to finish before GracePeriod expire
   * Allocation ( Disable shard allocation ) - This will disable shards allocation as described https://www.elastic.co/guide/en/elasticsearch/reference/current/rolling-upgrades.html
