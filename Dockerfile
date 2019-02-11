@@ -19,10 +19,6 @@ LABEL version="6.4.3"
 LABEL maintainer "fciocchetti@mintel.com"
 LABEL vcs-url "https://github.com/mintel/es-image"
 
-
-# Copy configuration
-COPY config /usr/share/elasticsearch/config
-
 # Run elasticsearch as unprivileged
 RUN chown elasticsearch:elasticsearch -R /usr/share/elasticsearch && \
     mkdir -p /data && \
@@ -60,8 +56,14 @@ RUN set -e \
 # Export HTTP & Transport
 EXPOSE 9200 9300
 
+# Copy configuration
+COPY config /usr/share/elasticsearch/config
+
 ENV ES_VERSION=6.4.3 \
     PATH=/usr/share/elasticsearch/bin:$PATH \
+    ES_GCLOG_FILE_COUNT=4 \
+    ES_GCLOG_FILE_PATH=/data/log/gc.log \
+    ES_GCLOG_FILE_SIZE=64m \
     ES_JAVA_OPTS="-Xms512m -Xmx512m" \
     CLUSTER_NAME=elasticsearch-default \
     NODE_MASTER=true \

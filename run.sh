@@ -114,6 +114,23 @@ fi
 # configuration overrides
 # CONF directory and files need to be writable by the user running the container
 
+## GC Log Settings
+if [[ ! -z ${ES_GCLOG_FILE_COUNT} ]]; then
+  sed -i -E "s/(8:-XX:NumberOfGCLogFiles=)\w+/\1${ES_GCLOG_FILE_COUNT}/" ${BASE}/config/jvm.options
+  sed -i -E "s/(9-:-Xlog:gc.+filecount=)[^:,]+(.*)/\1${ES_GCLOG_FILE_COUNT}\2/" ${BASE}/config/jvm.options
+fi
+
+if [[ ! -z ${ES_GCLOG_FILE_PATH} ]]; then
+  touch ${ES_GCLOG_FILE_PATH}
+  sed -i -E "s%(8:-Xloggc:).+%\1${ES_GCLOG_FILE_PATH}%" ${BASE}/config/jvm.options
+  sed -i -E "s%(9-:-Xlog:gc.+file=)[^:,]+(.*)%\1${ES_GCLOG_FILE_PATH}\2%" ${BASE}/config/jvm.options
+fi
+
+if [[ ! -z ${ES_GCLOG_FILE_SIZE} ]]; then
+  sed -i -E "s/(8:-XX:GCLogFileSize=)\w+/\1${ES_GCLOG_FILE_SIZE}/" ${BASE}/config/jvm.options
+  sed -i -E "s/(9-:-Xlog:gc.+filesize=)[^:,]+(.*)/\1${ES_GCLOG_FILE_SIZE}\2/" ${BASE}/config/jvm.options
+fi
+
 ## DNS Timers
 if [ ! -z "${NETWORK_ADDRESS_CACHE_TTL}" ]; then
     sed -i -e "s/#networkaddress.cache.ttl=.*/networkaddress.cache.ttl=${NETWORK_ADDRESS_CACHE_TTL}/" /opt/jdk-10.0.2/conf/security/java.security
