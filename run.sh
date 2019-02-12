@@ -121,6 +121,7 @@ if [[ ! -z ${ES_GCLOG_FILE_COUNT} ]]; then
 fi
 
 if [[ ! -z ${ES_GCLOG_FILE_PATH} ]]; then
+  mkdir -p "$(dirname "${ES_GCLOG_FILE_PATH}")"
   touch ${ES_GCLOG_FILE_PATH}
   sed -i -E "s%(8:-Xloggc:).+%\1${ES_GCLOG_FILE_PATH}%" ${BASE}/config/jvm.options
   sed -i -E "s%(9-:-Xlog:gc.+file=)[^:,]+(.*)%\1${ES_GCLOG_FILE_PATH}\2%" ${BASE}/config/jvm.options
