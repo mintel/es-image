@@ -7,9 +7,9 @@ You might want to review those settings, especially if you are lucky enough to h
 
 ## Instructions
 
-* kubectl apply -f rbac.yml
 * kubectl apply -f namespace.yml
 * kubectl apply -f config.yml
+* kubectl apply -f rbac.yml
 * kubectl apply -f 3-master-statefuleset.yml
 * kubectl rollout status statefulset/elasticsearch-master -n monitoring
 * kubectl apply -f 3-node-statefuleset.yml
