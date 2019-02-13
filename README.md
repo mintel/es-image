@@ -150,4 +150,4 @@ push persistent settings to the cluster
 
 ## run in minikube example
 
-see example [here](https://github.com/mintel/es-image/examples/minikube/README.md)
+see example [here](https://github.com/mintel/es-image/tree/master/examples/minikube)
