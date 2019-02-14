@@ -61,7 +61,7 @@ spec:
       terminationGracePeriodSeconds: 180
       containers:
         - name: elasticsearch
-          image: primeroz/es-image:v6.4.3-0
+          image: bbrockway/es-image:v6.6.0-2
           lifecycle:
             postStart:
               exec:

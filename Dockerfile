@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.4.3
+FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.6.0
 
 LABEL vendor="Mintel"
-LABEL version="6.4.3"
-LABEL maintainer "fciocchetti@mintel.com"
-LABEL vcs-url "https://github.com/mintel/es-image"
+LABEL version="6.6.0"
+LABEL maintainer="fciocchetti@mintel.com"
+LABEL vcs-url="https://github.com/mintel/es-image"
 
 # Copy configuration
 COPY config /usr/share/elasticsearch/config
@@ -26,7 +26,7 @@ COPY config /usr/share/elasticsearch/config
 RUN chown elasticsearch:elasticsearch -R /usr/share/elasticsearch && \
     mkdir -p /data && \
     chown elasticsearch:elasticsearch -R /data && \
-    chown elasticsearch:elasticsearch -R /opt/jdk-10.0.2/conf
+    chown elasticsearch:elasticsearch -R /opt/jdk-*/conf
 
 # Install Any extra package here
 ENV JQ_VERSION=1.5 \
@@ -59,7 +59,7 @@ RUN set -e \
 # Export HTTP & Transport
 EXPOSE 9200 9300
 
-ENV ES_VERSION=6.4.3 \
+ENV ES_VERSION=6.6.0 \
     PATH=/usr/share/elasticsearch/bin:$PATH \
     ES_GCLOG_FILE_COUNT=4 \
     ES_GCLOG_FILE_PATH=/data/log/gc.log \
