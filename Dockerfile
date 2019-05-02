@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.4.3
+FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.7.1
 
 LABEL vendor="Mintel"
-LABEL version="6.4.3"
-LABEL maintainer "fciocchetti@mintel.com"
-LABEL vcs-url "https://github.com/mintel/es-image"
+LABEL version="6.7.1"
+LABEL maintainer="fciocchetti@mintel.com"
+LABEL vcs-url="https://github.com/mintel/es-image"
 
 # Copy configuration
 COPY config /usr/share/elasticsearch/config
@@ -26,13 +26,13 @@ COPY config /usr/share/elasticsearch/config
 RUN chown elasticsearch:elasticsearch -R /usr/share/elasticsearch && \
     mkdir -p /data && \
     chown elasticsearch:elasticsearch -R /data && \
-    chown elasticsearch:elasticsearch -R /opt/jdk-10.0.2/conf
+    chown elasticsearch:elasticsearch -R /opt/jdk-12/conf
 
 # Install Any extra package here
 ENV JQ_VERSION=1.5 \
     JQ_SHA256=c6b3a7d7d3e7b70c6f51b706a3b90bd01833846c54d32ca32f0027f00226ff6d
-ENV ELASTICSEARCH_PY_VERSION=6.3.1 \
-    ELASTICSEARCH_PY_SHA256=aada5cfdc4a543c47098eb3aca6663848ef5d04b4324935ced441debc11ec98b
+ENV ELASTICSEARCH_PY_VERSION=6.4.0 \
+    ELASTICSEARCH_PY_SHA256=fd79690dcbe6228cf7e10f477432de69b4a9eeafd6bcba71de38c80bc3d6958e
 
 # jq
 RUN set -xe \
@@ -44,22 +44,25 @@ RUN set -xe \
 
 # Install python setuptools and elasticsearch-py
 RUN set -e \
-    && yum install -y python-setuptools \
-    && yum clean all
+    && yum install -y epel-release \
+    && yum install -y python-pip \
+    && yum remove -y epel-release \
+    && yum clean all \
+    && pip install setuptools --upgrade
 
 WORKDIR /tmp
 RUN set -e \
-    && curl -L https://files.pythonhosted.org/packages/9d/ce/c4664e8380e379a9402ecfbaf158e56396da90d520daba21cfa840e0eb71/elasticsearch-${ELASTICSEARCH_PY_VERSION}.tar.gz -o /tmp/elasticsearch.tar.gz \
+    && curl -L https://github.com/elastic/elasticsearch-py/archive/${ELASTICSEARCH_PY_VERSION}.tar.gz -o /tmp/elasticsearch.tar.gz \
     && echo "$ELASTICSEARCH_PY_SHA256  elasticsearch.tar.gz" | sha256sum -c \
     && tar xzf elasticsearch.tar.gz \
-    && cd elasticsearch-$ELASTICSEARCH_PY_VERSION \
+    && cd elasticsearch-py-$ELASTICSEARCH_PY_VERSION \
     && python setup.py install \
     && rm -rf /tmp/elasticsearch*
 
 # Export HTTP & Transport
 EXPOSE 9200 9300
 
-ENV ES_VERSION=6.4.3 \
+ENV ES_VERSION=6.7.1 \
     PATH=/usr/share/elasticsearch/bin:$PATH \
     ES_GCLOG_FILE_COUNT=4 \
     ES_GCLOG_FILE_PATH=/data/log/gc.log \
