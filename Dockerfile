@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.7.1
 
 LABEL vendor="Mintel"
@@ -26,7 +27,7 @@ COPY config /usr/share/elasticsearch/config
 RUN chown elasticsearch:elasticsearch -R /usr/share/elasticsearch && \
     mkdir -p /data && \
     chown elasticsearch:elasticsearch -R /data && \
-    chown elasticsearch:elasticsearch -R /opt/jdk-12/conf
+    chown elasticsearch:elasticsearch -R /opt/jdk-*/conf
 
 # Install Any extra package here
 ENV JQ_VERSION=1.5 \

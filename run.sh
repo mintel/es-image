@@ -134,11 +134,11 @@ fi
 
 ## DNS Timers
 if [ ! -z "${NETWORK_ADDRESS_CACHE_TTL}" ]; then
-    sed -i -e "s/#networkaddress.cache.ttl=.*/networkaddress.cache.ttl=${NETWORK_ADDRESS_CACHE_TTL}/" /opt/jdk-10.0.2/conf/security/java.security
+    sed -i -e "s/#networkaddress.cache.ttl=.*/networkaddress.cache.ttl=${NETWORK_ADDRESS_CACHE_TTL}/" /opt/jdk-*/conf/security/java.security
 fi
 
 if [ ! -z "${NETWORK_ADDRESS_CACHE_NEGATIVE_TTL}" ]; then
-    sed -i -e ""s/networkaddress.cache.negative.ttl=.*/networkaddress.cache.negative.ttl=${NETWORK_ADDRESS_CACHE_NEGATIVE_TTL}/"" /opt/jdk-10.0.2/conf/security/java.security
+    sed -i -e ""s/networkaddress.cache.negative.ttl=.*/networkaddress.cache.negative.ttl=${NETWORK_ADDRESS_CACHE_NEGATIVE_TTL}/"" /opt/jdk-*/conf/security/java.security
 fi
 
 # Trap the TERM Signals
