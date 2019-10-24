@@ -16,7 +16,7 @@
 
 PREFIX = mintel
 IMAGE = es-image
-TAG = v6.7.2-0
+TAG = v6.8.4-0
 
 build:
 	docker build --pull -t $(PREFIX)/$(IMAGE):$(TAG) .
