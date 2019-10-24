@@ -13,10 +13,10 @@
 # limitations under the License.
 
 
-FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.7.2
+FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.8.4
 
 LABEL vendor="Mintel"
-LABEL version="6.7.2"
+LABEL version="6.8.4"
 LABEL maintainer="fciocchetti@mintel.com"
 LABEL vcs-url="https://github.com/mintel/es-image"
 
@@ -63,7 +63,7 @@ RUN set -e \
 # Export HTTP & Transport
 EXPOSE 9200 9300
 
-ENV ES_VERSION=6.7.2 \
+ENV ES_VERSION=6.8.4 \
     PATH=/usr/share/elasticsearch/bin:$PATH \
     ES_GCLOG_FILE_COUNT=4 \
     ES_GCLOG_FILE_PATH=/data/log/gc.log \
