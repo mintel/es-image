@@ -106,7 +106,7 @@ elif [ ! -z "${KUBERNETES_SHARD_ALLOCATION_AWARENESS}" ]; then
     fi
   fi
 
-  
+
 
   echo ""
 fi
@@ -134,11 +134,17 @@ fi
 
 ## DNS Timers
 if [ ! -z "${NETWORK_ADDRESS_CACHE_TTL}" ]; then
-    sed -i -e "s/#networkaddress.cache.ttl=.*/networkaddress.cache.ttl=${NETWORK_ADDRESS_CACHE_TTL}/" /opt/jdk-*/conf/security/java.security
+    sed -i -e "s/#networkaddress.cache.ttl=.*/networkaddress.cache.ttl=${NETWORK_ADDRESS_CACHE_TTL}/" /usr/share/elasticsearch/jdk/conf/security/java.security
 fi
 
 if [ ! -z "${NETWORK_ADDRESS_CACHE_NEGATIVE_TTL}" ]; then
-    sed -i -e ""s/networkaddress.cache.negative.ttl=.*/networkaddress.cache.negative.ttl=${NETWORK_ADDRESS_CACHE_NEGATIVE_TTL}/"" /opt/jdk-*/conf/security/java.security
+    sed -i -e ""s/networkaddress.cache.negative.ttl=.*/networkaddress.cache.negative.ttl=${NETWORK_ADDRESS_CACHE_NEGATIVE_TTL}/"" /usr/share/elasticsearch/jdk/conf/security/java.security
+fi
+
+# Is there a cluster already running or are we bootstrapping one?
+CLUSTER_RESPONSE=$(curl -I -X GET --connect-timeout 10 "${CLUSTER_URL}/_cluster/health" 2>/dev/null | head -n 1 | cut -d' ' -f 2)
+if [[ ! "$CLUSTER_RESPONSE" == "200" ]]; then
+  ES_EXTRA_ARGS+=" -Ecluster.initial_master_nodes=${MASTER_NODES}"
 fi
 
 # Trap the TERM Signals

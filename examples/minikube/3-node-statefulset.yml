@@ -59,7 +59,8 @@ spec:
       terminationGracePeriodSeconds: 180
       containers:
         - name: elasticsearch
-          image: bbrockway/es-image:v6.6.0-2
+          image: bbrockway/es-image:latest
+          imagePullPolicy: Never
           lifecycle:
             postStart:
               exec:
@@ -92,8 +93,6 @@ spec:
               value: "true"
             - name: NODE_DATA
               value: "true"
-            - name: HTTP_ENABLE
-              value: "true"
             - name: NETWORK_HOST
               value: "0.0.0.0"
             - name: ES_JAVA_OPTS
@@ -107,7 +106,7 @@ spec:
             # PROCESSORS NEED TO BE AN INTEGER
             - name: PROCESSORS
               value: "1"
-            - name: PERSITENT_SETTINGS_FILE_PATH
+            - name: PERSISTENT_SETTINGS_FILE_PATH
               value: "/tmp/persistent-settings.json"
             - name: MAINTENANCE_MODE
               value: "ALLOCATION"

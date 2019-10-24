@@ -44,8 +44,8 @@ CLUSTER_CONCURRENT_REBALANCE = os.environ.get(
 # Persisntent Settings file
 ##
 # JSON file location containing an arbitrary set of persistent settings
-PERSITENT_SETTINGS_FILE_PATH = os.environ.get(
-    'PERSITENT_SETTINGS_FILE_PATH', None)
+PERSISTENT_SETTINGS_FILE_PATH = os.environ.get(
+    'PERSISTENT_SETTINGS_FILE_PATH', None)
 
 # ENV Settings
 DISCOVERY_SERVICE = os.environ.get("DISCOVERY_SERVICE", None)
@@ -376,8 +376,8 @@ def main():
     elif action == "persitent-settings":
         pprint("Current Settings:")
         pprint(client.cluster.get_settings())
-        if PERSITENT_SETTINGS_FILE_PATH:
-            set_persistent_settings(client, PERSITENT_SETTINGS_FILE_PATH)
+        if PERSISTENT_SETTINGS_FILE_PATH:
+            set_persistent_settings(client, PERSISTENT_SETTINGS_FILE_PATH)
         else:
             pprint("No persistent settings file available - skipping")
     else:
