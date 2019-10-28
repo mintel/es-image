@@ -132,9 +132,8 @@ if [[ ! -z ${ES_GCLOG_FILE_SIZE} ]]; then
   sed -i -E "s/(9-:-Xlog:gc.+filesize=)[^:,]+(.*)/\1${ES_GCLOG_FILE_SIZE}\2/" ${BASE}/config/jvm.options
 fi
 
-# Is there a cluster already running or are we bootstrapping one?
-CLUSTER_RESPONSE=$(curl -I -X GET --connect-timeout 10 "${CLUSTER_URL}/_cluster/health" 2>/dev/null | head -n 1 | cut -d' ' -f 2)
-if [[ ! "$CLUSTER_RESPONSE" == "200" ]]; then
+# Add initial_master_nodes setting in case we're bootstrapping a new cluster
+if [[ ${NODE_MASTER} == "true" ]]; then
   ES_EXTRA_ARGS+=" -Ecluster.initial_master_nodes=${MASTER_NODES}"
 fi
 

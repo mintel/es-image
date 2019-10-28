@@ -13,10 +13,10 @@
 # limitations under the License.
 
 
-FROM docker.elastic.co/elasticsearch/elasticsearch-oss:7.4.0
+FROM docker.elastic.co/elasticsearch/elasticsearch-oss:7.4.1
 
 LABEL vendor="Mintel"
-LABEL version="7.4.0"
+LABEL version="7.4.1"
 LABEL maintainer="fciocchetti@mintel.com"
 LABEL vcs-url="https://github.com/mintel/es-image"
 
@@ -64,7 +64,7 @@ ENV CLUSTER_NAME=elasticsearch-default \
     ES_GCLOG_FILE_PATH=/data/log/gc.log \
     ES_GCLOG_FILE_SIZE=64m \
     ES_JAVA_OPTS="-Xms512m -Xmx512m" \
-    ES_VERSION=7.4.0 \
+    ES_VERSION=7.4.1 \
     HTTP_CORS_ALLOW_ORIGIN="*" \
     HTTP_CORS_ENABLE=true \
     MASTER_NODES=localhost \
