@@ -109,11 +109,9 @@ push persistent settings to the cluster
 * [NODE\_MASTER](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-node.html#master-node)
 * [NODE\_DATA](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-node.html#data-node)
 * [NETWORK\_HOST](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-network.html#network-interface-values)
-* [HTTP\_ENABLE](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-http.html#_settings_2)
 * [HTTP\_CORS\_ENABLE](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-http.html#_settings_2)
 * [HTTP\_CORS\_ALLOW\_ORIGIN](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-http.html#_settings_2)
 * [NUMBER\_OF\_MASTERS](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-discovery-zen.html#master-election)
-* [MAX\_LOCAL\_STORAGE\_NODES](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-node.html#max-local-storage-nodes)
 * ES\_GCLOG\_FILE\_COUNT - Number of GC log files to keep in the rotation.
 * ES\_GCLOG\_FILE\_PATH - Location of main GC file (e.g. data/gc.log).
 * ES\_GCLOG\_FILE\_SIZE - Max size of each rolled GC log (e.g. 64m).
