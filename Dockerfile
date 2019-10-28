@@ -48,12 +48,11 @@ RUN set -e \
     && yum remove -y epel-release \
     && yum clean all
 
+# Pip package installs/upgrades
 RUN set -e \
-    && pip install --upgrade pip==${NEW_PIP_VERSION}
-
-# Install elasticsearch-py
-RUN set -e \
-    && pip install elasticsearch==${ELASTICSEARCH_PY_VERSION}
+    && pip install --upgrade \
+       pip==${NEW_PIP_VERSION} \
+       elasticsearch==${ELASTICSEARCH_PY_VERSION}
 
 # Export HTTP & Transport
 EXPOSE 9200 9300
@@ -71,7 +70,6 @@ ENV CLUSTER_NAME=elasticsearch-default \
     MASTER_NODES=localhost \
     MAX_LOCAL_STORAGE_NODES=1 \
     MEMORY_LOCK=false \
-    MINIMUM_NUMBER_OF_MASTERS=1 \
     NETWORK_ADDRESS_CACHE_NEGATIVE_TTL=10 \
     NETWORK_ADDRESS_CACHE_TTL=3 \
     NETWORK_HOST=_site_ \

@@ -132,15 +132,6 @@ if [[ ! -z ${ES_GCLOG_FILE_SIZE} ]]; then
   sed -i -E "s/(9-:-Xlog:gc.+filesize=)[^:,]+(.*)/\1${ES_GCLOG_FILE_SIZE}\2/" ${BASE}/config/jvm.options
 fi
 
-## DNS Timers
-if [ ! -z "${NETWORK_ADDRESS_CACHE_TTL}" ]; then
-    sed -i -e "s/#networkaddress.cache.ttl=.*/networkaddress.cache.ttl=${NETWORK_ADDRESS_CACHE_TTL}/" /usr/share/elasticsearch/jdk/conf/security/java.security
-fi
-
-if [ ! -z "${NETWORK_ADDRESS_CACHE_NEGATIVE_TTL}" ]; then
-    sed -i -e ""s/networkaddress.cache.negative.ttl=.*/networkaddress.cache.negative.ttl=${NETWORK_ADDRESS_CACHE_NEGATIVE_TTL}/"" /usr/share/elasticsearch/jdk/conf/security/java.security
-fi
-
 # Is there a cluster already running or are we bootstrapping one?
 CLUSTER_RESPONSE=$(curl -I -X GET --connect-timeout 10 "${CLUSTER_URL}/_cluster/health" 2>/dev/null | head -n 1 | cut -d' ' -f 2)
 if [[ ! "$CLUSTER_RESPONSE" == "200" ]]; then
