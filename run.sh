@@ -106,7 +106,7 @@ elif [ ! -z "${KUBERNETES_SHARD_ALLOCATION_AWARENESS}" ]; then
     fi
   fi
 
-  
+
 
   echo ""
 fi
@@ -132,14 +132,13 @@ if [[ ! -z ${ES_GCLOG_FILE_SIZE} ]]; then
   sed -i -E "s/(9-:-Xlog:gc.+filesize=)[^:,]+(.*)/\1${ES_GCLOG_FILE_SIZE}\2/" ${BASE}/config/jvm.options
 fi
 
-## DNS Timers
-if [ ! -z "${NETWORK_ADDRESS_CACHE_TTL}" ]; then
-    sed -i -e "s/#networkaddress.cache.ttl=.*/networkaddress.cache.ttl=${NETWORK_ADDRESS_CACHE_TTL}/" /opt/jdk-*/conf/security/java.security
+# Add initial_master_nodes setting in case we're bootstrapping a new cluster
+if [[ ${NODE_MASTER} == "true" ]]; then
+  ES_EXTRA_ARGS+=" -Ecluster.initial_master_nodes=${MASTER_NODES}"
 fi
 
-if [ ! -z "${NETWORK_ADDRESS_CACHE_NEGATIVE_TTL}" ]; then
-    sed -i -e ""s/networkaddress.cache.negative.ttl=.*/networkaddress.cache.negative.ttl=${NETWORK_ADDRESS_CACHE_NEGATIVE_TTL}/"" /opt/jdk-*/conf/security/java.security
-fi
+# Fix cgroup stats (https://github.com/elastic/elasticsearch-docker/pull/25)
+export ES_JAVA_OPTS="-Des.cgroups.hierarchy.override=/ $ES_JAVA_OPTS"
 
 # Trap the TERM Signals
 trap 'kill ${!}; term_handler' SIGTERM

@@ -61,7 +61,8 @@ spec:
       terminationGracePeriodSeconds: 180
       containers:
         - name: elasticsearch
-          image: bbrockway/es-image:v6.6.0-2
+          image: mintel/es-image:latest
+          imagePullPolicy: Never
           lifecycle:
             postStart:
               exec:
@@ -81,16 +82,12 @@ spec:
               value: "True"
             - name: DISCOVERY_SERVICE
               value: "elasticsearch-discovery.monitoring.svc.cluster.local"
-            - name: MINIMUM_NUMBER_OF_MASTERS
-              value: "2"
             - name: NODE_MASTER
               value: "true"
             - name: NODE_INGEST
               value: "false"
             - name: NODE_DATA
               value: "false"
-            - name: HTTP_ENABLE
-              value: "true"
             - name: NETWORK_HOST
               value: "0.0.0.0"
             - name: ES_JAVA_OPTS

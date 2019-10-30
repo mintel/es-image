@@ -13,27 +13,25 @@
 # limitations under the License.
 
 
-FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.8.4
+FROM docker.elastic.co/elasticsearch/elasticsearch-oss:7.4.1
 
 LABEL vendor="Mintel"
-LABEL version="6.8.4"
+LABEL version="7.4.1"
 LABEL maintainer="fciocchetti@mintel.com"
 LABEL vcs-url="https://github.com/mintel/es-image"
-
-# Copy configuration
-COPY config /usr/share/elasticsearch/config
 
 # Run elasticsearch as unprivileged
 RUN chown elasticsearch:elasticsearch -R /usr/share/elasticsearch && \
     mkdir -p /data && \
     chown elasticsearch:elasticsearch -R /data && \
-    chown elasticsearch:elasticsearch -R /opt/jdk-*/conf
+    chown elasticsearch:elasticsearch -R /usr/share/elasticsearch/jdk/conf
 
 # Install Any extra package here
 ENV JQ_VERSION=1.5 \
     JQ_SHA256=c6b3a7d7d3e7b70c6f51b706a3b90bd01833846c54d32ca32f0027f00226ff6d
-ENV ELASTICSEARCH_PY_VERSION=6.3.1 \
-    ELASTICSEARCH_PY_SHA256=aada5cfdc4a543c47098eb3aca6663848ef5d04b4324935ced441debc11ec98b
+# Last pip version that has not deprecated python 2.7
+ENV NEW_PIP_VERSION=18.1
+ENV ELASTICSEARCH_PY_VERSION=7.0.5
 
 # jq
 RUN set -xe \
@@ -43,50 +41,44 @@ RUN set -xe \
     && mv jq /usr/local/bin \
     && chmod +x /usr/local/bin/jq
 
-# Install python setuptools and elasticsearch-py
+# Install pip
 RUN set -e \
     && yum install -y epel-release \
     && yum install -y python-pip \
     && yum remove -y epel-release \
-    && yum clean all \
-    && pip install setuptools --upgrade
+    && yum clean all
 
-WORKDIR /tmp
+# Pip package installs/upgrades
 RUN set -e \
-    && curl -L https://files.pythonhosted.org/packages/9d/ce/c4664e8380e379a9402ecfbaf158e56396da90d520daba21cfa840e0eb71/elasticsearch-${ELASTICSEARCH_PY_VERSION}.tar.gz -o /tmp/elasticsearch.tar.gz \
-    && echo "$ELASTICSEARCH_PY_SHA256  elasticsearch.tar.gz" | sha256sum -c \
-    && tar xzf elasticsearch.tar.gz \
-    && cd elasticsearch-$ELASTICSEARCH_PY_VERSION \
-    && python setup.py install \
-    && rm -rf /tmp/elasticsearch*
+    && pip install --upgrade \
+       pip==${NEW_PIP_VERSION} \
+       elasticsearch==${ELASTICSEARCH_PY_VERSION}
 
 # Export HTTP & Transport
 EXPOSE 9200 9300
 
-ENV ES_VERSION=6.8.4 \
-    PATH=/usr/share/elasticsearch/bin:$PATH \
+ENV CLUSTER_NAME=elasticsearch-default \
+    CLUSTER_URL="http://localhost:9200" \
+    DISCOVERY_SERVICE=elasticsearch-discovery \
     ES_GCLOG_FILE_COUNT=4 \
     ES_GCLOG_FILE_PATH=/data/log/gc.log \
     ES_GCLOG_FILE_SIZE=64m \
     ES_JAVA_OPTS="-Xms512m -Xmx512m" \
-    CLUSTER_NAME=elasticsearch-default \
-    NODE_MASTER=true \
+    ES_VERSION=7.4.1 \
+    HTTP_CORS_ALLOW_ORIGIN="*" \
+    HTTP_CORS_ENABLE=true \
+    MASTER_NODES=localhost \
+    MEMORY_LOCK=false \
+    NETWORK_ADDRESS_CACHE_NEGATIVE_TTL=10 \
+    NETWORK_ADDRESS_CACHE_TTL=3 \
+    NETWORK_HOST=_site_ \
     NODE_DATA=true \
     NODE_INGEST=true \
-    HTTP_ENABLE=true \
-    NETWORK_HOST=_site_ \
-    HTTP_CORS_ENABLE=true \
-    HTTP_CORS_ALLOW_ORIGIN="*" \
-    MINIMUM_NUMBER_OF_MASTERS=1 \
-    MAX_LOCAL_STORAGE_NODES=1 \
-    SHARD_ALLOCATION_AWARENESS="" \
-    SHARD_ALLOCATION_AWARENESS_ATTR="" \
-    MEMORY_LOCK=false \
+    NODE_MASTER=true \
+    PATH=/usr/share/elasticsearch/bin:$PATH \
     REPO_LOCATIONS="" \
-    DISCOVERY_SERVICE=elasticsearch-discovery \
-    NETWORK_ADDRESS_CACHE_TTL=3 \
-    NETWORK_ADDRESS_CACHE_NEGATIVE_TTL=10 \
-    DISCOVERY_SERVICE=elasticsearch-discovery
+    SHARD_ALLOCATION_AWARENESS="" \
+    SHARD_ALLOCATION_AWARENESS_ATTR=""
 
 WORKDIR /usr/share/elasticsearch
 
@@ -95,6 +87,9 @@ COPY run.sh /
 
 # Copy scripts 
 COPY scripts /
+
+# Copy configuration
+COPY config/* /usr/share/elasticsearch/config/
 
 USER elasticsearch
 
