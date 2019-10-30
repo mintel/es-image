@@ -137,6 +137,9 @@ if [[ ${NODE_MASTER} == "true" ]]; then
   ES_EXTRA_ARGS+=" -Ecluster.initial_master_nodes=${MASTER_NODES}"
 fi
 
+# Fix cgroup stats (https://github.com/elastic/elasticsearch-docker/pull/25)
+export ES_JAVA_OPTS="-Des.cgroups.hierarchy.override=/ $ES_JAVA_OPTS"
+
 # Trap the TERM Signals
 trap 'kill ${!}; term_handler' SIGTERM
 
