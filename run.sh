@@ -133,7 +133,7 @@ if [[ ! -z ${ES_GCLOG_FILE_SIZE} ]]; then
 fi
 
 # Add initial_master_nodes setting in case we're bootstrapping a new cluster
-if [[ ${NODE_MASTER} == "true" ]]; then
+if [[ ${NODE_MASTER} == "true" && ! -d "/data/data" ]]; then
   ES_EXTRA_ARGS+=" -Ecluster.initial_master_nodes=${MASTER_NODES}"
 fi
 
