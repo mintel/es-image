@@ -58,7 +58,7 @@ RUN set -e \
 EXPOSE 9200 9300
 
 ENV CLUSTER_NAME=elasticsearch-default \
-    CLUSTER_URL="http://localhost:9200" \
+    CLUSTER_MASTER_SERVICE_NAME="localhost" \
     DISCOVERY_SERVICE=elasticsearch-discovery \
     ES_GCLOG_FILE_COUNT=4 \
     ES_GCLOG_FILE_PATH=/data/log/gc.log \

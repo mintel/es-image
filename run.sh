@@ -134,14 +134,18 @@ fi
 
 # Add initial_master_nodes setting to master nodes if we're bootstrapping a new cluster
 if [[ ${NODE_MASTER} == "true" ]]; then
+  set +e
   # Check if /data/data directory is present on the attached persistent volume
   if [[ ! -d "/data/data" ]]; then
-    # Ensure you do not get a response from the master service (in case a pvc was deleted but a cluster still exists)
-    CLUSTER_RESPONSE=$(curl -s -I --connect-timeout 10 -X GET -o /dev/null -w "%{http_code}" "${CLUSTER_URL}/_cluster/health" || true)
-    if [[ ! "$CLUSTER_RESPONSE" == "200" ]]; then
-      ES_EXTRA_ARGS+=" -Ecluster.initial_master_nodes=${MASTER_NODES}"
+    # Check for a response from the master service (in case a pvc was deleted but a cluster still exists)
+    curl -s -I --connect-timeout 10 -X GET -o /dev/null -w "%{http_code}" "http://${CLUSTER_MASTER_SERVICE_NAME}:9200/_cluster/health"
+    rc=$?
+    # https://ec.haxx.se/usingcurl-returns.html
+    if [[ ! $rc == 0 && ! $rc == 18 ]]; then
+        ES_EXTRA_ARGS+=" -Ecluster.initial_master_nodes=${MASTER_NODES}"
     fi
   fi
+  set -e
 fi
 
 # Fix cgroup stats (https://github.com/elastic/elasticsearch-docker/pull/25)
