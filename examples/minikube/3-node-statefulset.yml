@@ -2,19 +2,19 @@
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
-  name: elasticsearch-node
+  name: elasticsearch-data
   namespace: monitoring
 spec:
   maxUnavailable: 1
   selector:
     matchLabels:
       app: elasticsearch
-      role: node
+      role: data
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: elasticsearch-node
+  name: elasticsearch-data-log
   namespace: monitoring
   labels:
     app: elasticsearch
@@ -22,7 +22,7 @@ metadata:
 spec:
   selector:
     app: elasticsearch
-    role: node
+    role: data
   ports:
     - name: http
       port: 9200
@@ -30,27 +30,27 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: elasticsearch-node
+  name: elasticsearch-data-log
   namespace: monitoring
   labels:
     app: elasticsearch
-    role: node
+    role: data
 spec:
-  serviceName: elasticsearch-node
+  serviceName: elasticsearch-data-log
   replicas: 3
   updateStrategy:
     type: RollingUpdate
   selector:
     matchLabels:
       app: elasticsearch
-      role: node
+      role: data
   template:
     metadata:
       annotations:
         roll_generation: "1"
       labels:
         app: elasticsearch
-        role: node
+        role: data
     spec:
       securityContext:
         runAsUser: 1000
@@ -59,7 +59,7 @@ spec:
       terminationGracePeriodSeconds: 180
       containers:
         - name: elasticsearch
-          image: mintel/es-image:latest
+          image: mintel/es-image:v7.5.1-0
           imagePullPolicy: Never
           lifecycle:
             postStart:
@@ -84,7 +84,7 @@ spec:
             - name: CLUSTER_NAME
               value: logs
             - name: DISCOVERY_SERVICE
-              value: "elasticsearch-discovery.monitoring.svc.cluster.local"
+              value: elasticsearch-master-log
             - name: NODE_MASTER
               value: "false"
             - name: NODE_INGEST

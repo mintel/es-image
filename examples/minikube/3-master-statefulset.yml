@@ -14,7 +14,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: elasticsearch-discovery
+  name: elasticsearch-master-log
   namespace: monitoring
   labels:
     app: elasticsearch
@@ -32,13 +32,13 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: elasticsearch-master
+  name: elasticsearch-master-log
   namespace: monitoring
   labels:
     app: elasticsearch
     role: master
 spec:
-  serviceName: elasticsearch-discovery
+  serviceName: elasticsearch-master-log
   replicas: 3
   updateStrategy:
     type: RollingUpdate
@@ -61,7 +61,7 @@ spec:
       terminationGracePeriodSeconds: 180
       containers:
         - name: elasticsearch
-          image: mintel/es-image:latest
+          image: mintel/es-image:v7.5.1-0
           imagePullPolicy: Never
           lifecycle:
             postStart:
@@ -76,12 +76,16 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: CLUSTER_MASTER_SERVICE_NAME
+              value: elasticsearch-master-log
+            - name: DISCOVERY_SERVICE
+              value: elasticsearch-master-log
             - name: CLUSTER_NAME
               value: logs
             - name: KUBERNETES_SHARD_ALLOCATION_AWARENESS
               value: "True"
-            - name: DISCOVERY_SERVICE
-              value: "elasticsearch-discovery.monitoring.svc.cluster.local"
+            - name: MASTER_NODES
+              value: elasticsearch-master-log-0,elasticsearch-master-log-1,elasticsearch-master-log-2 
             - name: NODE_MASTER
               value: "true"
             - name: NODE_INGEST
