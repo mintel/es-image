@@ -78,7 +78,9 @@ ENV CLUSTER_NAME=elasticsearch-default \
     PATH=/usr/share/elasticsearch/bin:$PATH \
     REPO_LOCATIONS="" \
     SHARD_ALLOCATION_AWARENESS="" \
-    SHARD_ALLOCATION_AWARENESS_ATTR=""
+    SHARD_ALLOCATION_AWARENESS_ATTR="" \
+    XPACK_MONITORING="true" \
+    XPACK_ML="false"
 
 WORKDIR /usr/share/elasticsearch
 

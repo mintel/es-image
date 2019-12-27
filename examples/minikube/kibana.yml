@@ -1,5 +1,42 @@
 ---
 apiVersion: v1
+data:
+  setup-kibana.sh: |
+    #!/bin/bash
+    # Perform configuration of kibana via the REST API
+    set -ex
+
+    # Configure default_field
+    echo "Configuring Kibana: Default Field"
+    curl --fail 'http://localhost:5601/api/kibana/settings' \
+      -H 'content-type: application/json' \
+      -H 'kbn-xsrf: true' \
+      --data-binary '{"changes":{"query:queryString:options":"{ \"analyze_wildcard\": true, \"default_field\": \"log\" }"}}'
+
+    if ! curl --fail -X GET 'http://localhost:5601/api/saved_objects/index-pattern/kubernetes-*'; then
+      echo "Configuring Kibana: Create kubernetes index-pattern"
+      curl --fail -X POST 'http://localhost:5601/api/saved_objects/index-pattern/kubernetes-*' \
+        -H 'content-type: application/json' \
+        -H 'kbn-xsrf: true' \
+        -d"{\"attributes\":{\"title\":\"kubernetes-*\",\"timeFieldName\":\"@timestamp\"}}"
+    fi
+
+    if ! curl --fail -X GET 'http://localhost:5601/api/saved_objects/index-pattern/haproxy-*'; then
+      echo "Configuring Kibana: Create haproxy index-pattern"
+      curl --fail -X POST 'http://localhost:5601/api/saved_objects/index-pattern/haproxy-*' \
+        -H 'content-type: application/json' \
+        -H 'kbn-xsrf: true' \
+        -d"{\"attributes\":{\"title\":\"haproxy-*\",\"timeFieldName\":\"@timestamp\"}}"
+    fi
+
+kind: ConfigMap
+metadata:
+  labels:
+    name: kibana
+  name: kibana-config-script
+  namespace: monitoring
+---
+apiVersion: v1
 kind: Service
 metadata:
   labels:
@@ -65,6 +102,37 @@ spec:
           requests:
             cpu: 50m
             memory: 256Mi
+      - name: setup
+        image: mintel/docker-alpine-bash-curl-jq:2.0.0
+        resources:
+          limits:
+            cpu: 50m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
+        command: [ '/pause' ]
+        lifecycle:
+          postStart:
+            exec:
+              command:
+                - dockerize
+                - -wait
+                - http://localhost:5601
+                - -timeout
+                - 300s
+                - -wait-retry-interval
+                - 10s
+                - bash
+                - /opt/setup-kibana.sh
+        volumeMounts:
+        - mountPath: /opt/setup-kibana.sh
+          name: config-volume
+          subPath: setup-kibana.sh
       securityContext:
         fsGroup: 1000
         runAsUser: 1000
+      volumes:
+      - configMap:
+          name: kibana-config-script
+        name: config-volume

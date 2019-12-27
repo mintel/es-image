@@ -148,6 +148,20 @@ if [[ ${NODE_MASTER} == "true" ]]; then
   set -e
 fi
 
+declare -a es_opts
+# Handle xpack settings
+if [[ "x${XPACK_MONITORING}" == "xtrue" ]]; then
+  es_opts+=("-Expack.monitoring.enabled=true")
+  es_opts+=("-Expack.monitoring.collection.enabled=true")
+fi
+if [[ "x${XPACK_ML}" == "xtrue" ]]; then
+  es_opts+=("-Enode.ml=true")
+  es_opts+=("-Expack.ml.enabled=true")
+else
+  es_opts+=("-Enode.ml=false")
+  es_opts+=("-Expack.ml.enabled=false")
+fi
+
 # Fix cgroup stats (https://github.com/elastic/elasticsearch-docker/pull/25)
 export ES_JAVA_OPTS="-Des.cgroups.hierarchy.override=/ $ES_JAVA_OPTS"
 
@@ -155,7 +169,7 @@ export ES_JAVA_OPTS="-Des.cgroups.hierarchy.override=/ $ES_JAVA_OPTS"
 trap 'kill ${!}; term_handler' SIGTERM
 
 # run Elasticsearch in the background
-$BASE/bin/elasticsearch $ES_EXTRA_ARGS &
+$BASE/bin/elasticsearch $ES_EXTRA_ARGS "${es_opts[@]}" &
 PID="$!"
 
 if [ ! -z "${ES_GCS_CREDENTIALS_FILE}" ]; then
