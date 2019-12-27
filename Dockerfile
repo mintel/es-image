@@ -13,7 +13,8 @@
 # limitations under the License.
 
 
-FROM docker.elastic.co/elasticsearch/elasticsearch:7.5.1
+#FROM docker.elastic.co/elasticsearch/elasticsearch:7.5.1
+FROM elasticsearch:7.5.1
 
 LABEL vendor="Mintel"
 LABEL version="7.5.1"

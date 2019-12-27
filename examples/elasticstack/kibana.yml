@@ -13,26 +13,27 @@ data:
       -H 'kbn-xsrf: true' \
       --data-binary '{"changes":{"query:queryString:options":"{ \"analyze_wildcard\": true, \"default_field\": \"log\" }"}}'
 
-    if ! curl --fail -X GET 'http://localhost:5601/api/saved_objects/index-pattern/kubernetes-*'; then
-      echo "Configuring Kibana: Create kubernetes index-pattern"
-      curl --fail -X POST 'http://localhost:5601/api/saved_objects/index-pattern/kubernetes-*' \
-        -H 'content-type: application/json' \
-        -H 'kbn-xsrf: true' \
-        -d"{\"attributes\":{\"title\":\"kubernetes-*\",\"timeFieldName\":\"@timestamp\"}}"
+    # REVIEW: They do not work at the moment, they show up in the UI but it errors out about fetching fields
+    #if ! curl --fail -X GET 'http://localhost:5601/api/saved_objects/index-pattern/kubernetes-*'; then
+    #  echo "Configuring Kibana: Create kubernetes index-pattern"
+    #  curl --fail -X POST 'http://localhost:5601/api/saved_objects/index-pattern/kubernetes-*' \
+    #    -H 'content-type: application/json' \
+    #    -H 'kbn-xsrf: true' \
+    #    -d"{\"attributes\":{\"title\":\"kubernetes-*\",\"timeFieldName\":\"@timestamp\"}}"
 
-      curl --fail -X POST 'http://localhost:5601/api/kibana/settings/defaultIndex' \
-        -H 'content-type: application/json' \
-        -H 'kbn-xsrf: true' \
-        -d"{\"value\":\"kubernetes-*\"}"
-    fi
+    #  curl --fail -X POST 'http://localhost:5601/api/kibana/settings/defaultIndex' \
+    #    -H 'content-type: application/json' \
+    #    -H 'kbn-xsrf: true' \
+    #    -d"{\"value\":\"kubernetes-*\"}"
+    #fi
 
-    if ! curl --fail -X GET 'http://localhost:5601/api/saved_objects/index-pattern/haproxy-*'; then
-      echo "Configuring Kibana: Create haproxy index-pattern"
-      curl --fail -X POST 'http://localhost:5601/api/saved_objects/index-pattern/haproxy-*' \
-        -H 'content-type: application/json' \
-        -H 'kbn-xsrf: true' \
-        -d"{\"attributes\":{\"title\":\"haproxy-*\",\"timeFieldName\":\"@timestamp\"}}"
-    fi
+    #if ! curl --fail -X GET 'http://localhost:5601/api/saved_objects/index-pattern/haproxy-*'; then
+    #  echo "Configuring Kibana: Create haproxy index-pattern"
+    #  curl --fail -X POST 'http://localhost:5601/api/saved_objects/index-pattern/haproxy-*' \
+    #    -H 'content-type: application/json' \
+    #    -H 'kbn-xsrf: true' \
+    #    -d"{\"attributes\":{\"title\":\"haproxy-*\",\"timeFieldName\":\"@timestamp\"}}"
+    #fi
 
 kind: ConfigMap
 metadata:
