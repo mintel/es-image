@@ -19,6 +19,11 @@ data:
         -H 'content-type: application/json' \
         -H 'kbn-xsrf: true' \
         -d"{\"attributes\":{\"title\":\"kubernetes-*\",\"timeFieldName\":\"@timestamp\"}}"
+
+      curl --fail -X POST 'http://localhost:5601/api/kibana/settings/defaultIndex' \
+        -H 'content-type: application/json' \
+        -H 'kbn-xsrf: true' \
+        -d"{\"value\":\"kubernetes-*\"}"
     fi
 
     if ! curl --fail -X GET 'http://localhost:5601/api/saved_objects/index-pattern/haproxy-*'; then
