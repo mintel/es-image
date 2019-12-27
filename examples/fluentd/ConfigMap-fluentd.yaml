@@ -365,11 +365,6 @@ data:
       include_tag_key true
       host elasticsearch-data-log
       port 9200
-      logstash_format true
-      logstash_prefix kubernetes
-      template_name kubernetes
-      template_file /etc/fluent/config.d/es-template-logstash.json
-      template_overwrite true
       # Try to reload the elasticsearch node IP addresses if there is a failure making a request to it.
       reload_on_failure true
       # If a data node refuses events from fluentd - perhaps because it's overloaded - it marks it as dead for 60s
@@ -378,14 +373,24 @@ data:
       # Higher-performance JSON serialiser
       prefer_oj_serializer true
 
+      include_timestamp true
+
       # ILM Settings
-      enable_ilm true
+      # https://github.com/uken/fluent-plugin-elasticsearch#enable-index-lifecycle-management
+      index_name kubernetes
+      rollover_index true
       deflector_alias kubernetes
-      rollover_index false
       index_prefix kubernetes
+      application_name default
+      index_date_pattern "now/d"
+      enable_ilm true
       # Policy configurations
       ilm_policy_id kubernetes
-      ilm_policy {"policy":{"phases":{"warm":{"min_age":"1d","actions":{"allocate":{"number_of_replicas":1}}},"delete":{"min_age":"30d","actions":{"delete":{}}}}}}
+      ilm_policy {"policy":{"phases":{"warm":{"min_age":"1d","actions":{"allocate":{"number_of_replicas":1}, "forcemerge":{"max_num_segments": 1}}},"delete":{"min_age":"30d","actions":{"delete":{}}}}}}
+      template_name kubernetes
+      template_file /etc/fluent/config.d/es-template-logstash.json
+      template_overwrite true
+      customize_template {"<<index_prefix>>": "kubernetes"}
 
       <buffer>
         @type file
@@ -412,10 +417,6 @@ data:
       include_tag_key true
       host elasticsearch-data-log
       port 9200
-      logstash_format true
-      template_name logstash
-      template_file /etc/fluent/config.d/es-template-logstash.json
-      template_overwrite true
       # Try to reload the elasticsearch node IP addresses if there is a failure making a request to it.
       reload_on_failure true
       # If a data node refuses events from fluentd - perhaps because it's overloaded - it marks it as dead for 60s
@@ -424,14 +425,24 @@ data:
       # Higher-performance JSON serialiser
       prefer_oj_serializer true
 
+      include_timestamp true
+
       # ILM Settings
-      enable_ilm true
+      # https://github.com/uken/fluent-plugin-elasticsearch#enable-index-lifecycle-management
+      index_name logstash
+      rollover_index true
       deflector_alias logstash
-      rollover_index false
       index_prefix logstash
+      application_name default
+      index_date_pattern "now/d"
+      enable_ilm true
       # Policy configurations
       ilm_policy_id logstash
-      ilm_policy {"policy":{"phases":{"warm":{"min_age":"1d","actions":{"allocate":{"number_of_replicas":1}}},"delete":{"min_age":"30d","actions":{"delete":{}}}}}}
+      ilm_policy {"policy":{"phases":{"warm":{"min_age":"1d","actions":{"allocate":{"number_of_replicas":1}, "forcemerge":{"max_num_segments": 1}}},"delete":{"min_age":"30d","actions":{"delete":{}}}}}}
+      template_name logstash
+      template_file /etc/fluent/config.d/es-template-logstash.json
+      template_overwrite true
+      customize_template {"<<index_prefix>>": "logstash"}
 
       <buffer>
         @type file
@@ -452,7 +463,6 @@ data:
     </match>
   es-template-logstash.json: |
     {
-      "index_patterns" : "logstash-*",
       "settings" : {
         "index.refresh_interval" : "5s"
       },
