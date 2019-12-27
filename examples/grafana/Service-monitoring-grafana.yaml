@@ -1,0 +1,27 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/part-of: grafana
+    name: grafana
+  name: grafana
+  namespace: monitoring
+spec:
+  clusterIP: None
+  ports:
+  - name: http
+    port: 3000
+    protocol: TCP
+    targetPort: 3000
+  - name: metrics
+    port: 7000
+    protocol: TCP
+    targetPort: 7000
+  selector:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/part-of: grafana
+    name: grafana
+  sessionAffinity: None
+  type: ClusterIP
