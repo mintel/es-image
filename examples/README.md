@@ -13,6 +13,12 @@ Start minikube, point your docker client at the daemon inside minikube and run a
 minikube start --cpus=2 --memory=4096 --kubernetes-version=v1.13.7
 eval $(minikube docker-env)
 ```
+or
+```bash
+k3d create -v /dev/mapper:/dev/mapper --publish 8080:80 --publish 8443:443 --workers 1
+
+k3d i mintel/es-image:XXXXXX
+```
 
 Minikube doesn't inherit your host's vm.max_map_count setting so you need to make sure this is set to the correct value within the minikube VM or the pod won't start:
 
