@@ -27,20 +27,22 @@ data:
         database: "kubernetes"
         url: http://elasticsearch-data-log:9200
         jsonData:
-          interval: "No Pattern"
+          interval: ""
+          maxConcurrentShardRequests: 5
           timeField: "@timestamp"
           esVersion: 70
-          #logMessageField: _source
-      #- name: Elasticsearch-system
-      #  type: elasticsearch
-      #  access: proxy
-      #  database: "[logstash-default-]YYYY.MM.DD"
-      #  url: http://elasticsearch-data-log:9200
-      #  jsonData:
-      #    interval: Daily
-      #    timeField: "@timestamp"
-      #    esVersion: 75
-      #    esVersion: 56
+          logMessageField: _source
+      - name: Elasticsearch-system
+        type: elasticsearch
+        access: proxy
+        database: "logstash"
+        url: http://elasticsearch-data-log:9200
+        jsonData:
+          interval: ""
+          maxConcurrentShardRequests: 5
+          timeField: "@timestamp"
+          esVersion: 70
+          logMessageField: _source
   grafana.ini: |
     [analytics]
     check_for_updates = false
