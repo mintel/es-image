@@ -386,7 +386,7 @@ data:
       enable_ilm true
       # Policy configurations
       ilm_policy_id kubernetes
-      ilm_policy {"policy":{"phases":{"warm":{"min_age":"1d","actions":{"allocate":{"number_of_replicas":1}, "forcemerge":{"max_num_segments": 1}}},"delete":{"min_age":"30d","actions":{"delete":{}}}}}}
+      ilm_policy {"policy":{"phases":{"hot":{"actions":{"rollover":{"max_age":"1h"}}},"delete":{"min_age":"30d","actions":{"delete":{}}},"warm":{"actions":{"allocate":{"number_of_replicas":1},"forcemerge":{"max_num_segments":1}}}}}}
       template_name kubernetes
       template_file /etc/fluent/config.d/es-template-logstash.json
       template_overwrite true
@@ -438,7 +438,7 @@ data:
       enable_ilm true
       # Policy configurations
       ilm_policy_id logstash
-      ilm_policy {"policy":{"phases":{"warm":{"min_age":"1d","actions":{"allocate":{"number_of_replicas":1}, "forcemerge":{"max_num_segments": 1}}},"delete":{"min_age":"30d","actions":{"delete":{}}}}}}
+      ilm_policy {"policy":{"phases":{"hot":{"actions":{"rollover":{"max_age":"1h"}}},"delete":{"min_age":"30d","actions":{"delete":{}}},"warm":{"actions":{"allocate":{"number_of_replicas":1},"forcemerge":{"max_num_segments":1}}}}}}
       template_name logstash
       template_file /etc/fluent/config.d/es-template-logstash.json
       template_overwrite true

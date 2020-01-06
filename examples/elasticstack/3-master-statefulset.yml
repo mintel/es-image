@@ -107,10 +107,10 @@ spec:
               value: "1"
           resources:
             requests:
-              cpu: 0.15
+              cpu: 0.35
               memory: 350Mi
             limits:
-              cpu: 0.50
+              cpu: 0.750
               memory: 512Mi
           ports:
             - containerPort: 9200

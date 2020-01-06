@@ -18,6 +18,30 @@ or
 k3d create -v /dev/mapper:/dev/mapper --publish 8080:80 --publish 8443:443 --workers 1
 
 k3d i mintel/es-image:XXXXXX
+k3d i mintel/fluentd-es-image:XXXXXX
+
+sudo sysctl -w vm.max_map_count=262144
+
+export KUBECONFIG="$(k3d get-kubeconfig --name='k3s-default')"
+
+kubectl apply -f elasticstack/namespace.yml
+kubectl apply -f elasticstack/rbac.yml
+kubectl apply -f elasticstack/config.yml
+kubectl apply -f elasticstack/3-master-statefulset.yml
+kubectl rollout status statefulset/elasticsearch-master-log -n monitoring
+kubectl apply -f elasticstack/3-node-statefulset.yml
+kubectl rollout status statefulset/elasticsearch-data-log -n monitoring
+
+kubectl port-forward -n monitoring elasticsearch-master-log-0 9200
+curl 'localhost:9200/_cluster/health?pretty'
+curl 'localhost:9200/_cat/nodes?v'
+
+kubectl apply -f elasticstack/kibana.yml
+kubectl port-forward -n monitoring service/kibana-log 5601
+
+kubectl apply -f fluentd/
+kubectl apply -f grafana/
+
 ```
 
 Minikube doesn't inherit your host's vm.max_map_count setting so you need to make sure this is set to the correct value within the minikube VM or the pod won't start:
