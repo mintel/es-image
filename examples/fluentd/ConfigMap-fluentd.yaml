@@ -382,11 +382,13 @@ data:
       deflector_alias kubernetes
       index_prefix kubernetes
       application_name default
+      # If empty string("") is specified in index_date_patter, index date pattern is not used. Elasticsearch plugin just creates <index_prefix-application_name-000001> 
+      #index_date_pattern ""
       index_date_pattern "now/d"
       enable_ilm true
       # Policy configurations
       ilm_policy_id kubernetes
-      ilm_policy {"policy":{"phases":{"hot":{"actions":{"rollover":{"max_age":"12h"}}},"delete":{"min_age":"30d","actions":{"delete":{}}},"warm":{"actions":{"allocate":{"number_of_replicas":1},"forcemerge":{"max_num_segments":1}}}}}}
+      ilm_policy {"policy":{"phases":{"hot":{"actions":{"rollover":{"max_age":"1h","max_size":"10M"}}},"delete":{"min_age":"30d","actions":{"delete":{}}},"warm":{"actions":{"allocate":{"number_of_replicas":1},"forcemerge":{"max_num_segments":1}}}}}}
       template_name kubernetes
       template_file /etc/fluent/config.d/es-template-logstash.json
       template_overwrite true
@@ -434,11 +436,12 @@ data:
       deflector_alias logstash
       index_prefix logstash
       application_name default
-      index_date_pattern "now/d"
+      # If empty string("") is specified in index_date_patter, index date pattern is not used. Elasticsearch plugin just creates <index_prefix-application_name-000001> 
+      index_date_pattern ""
       enable_ilm true
       # Policy configurations
       ilm_policy_id logstash
-      ilm_policy {"policy":{"phases":{"hot":{"actions":{"rollover":{"max_age":"12h"}}},"delete":{"min_age":"30d","actions":{"delete":{}}},"warm":{"actions":{"allocate":{"number_of_replicas":1},"forcemerge":{"max_num_segments":1}}}}}}
+      ilm_policy {"policy":{"phases":{"hot":{"actions":{"rollover":{"max_age":"12h","max_size":"10M"}}},"delete":{"min_age":"30d","actions":{"delete":{}}},"warm":{"actions":{"allocate":{"number_of_replicas":1},"forcemerge":{"max_num_segments":1}}}}}}
       template_name logstash
       template_file /etc/fluent/config.d/es-template-logstash.json
       template_overwrite true
@@ -466,7 +469,7 @@ data:
       "version" : 60001,
       "settings" : {
         "index.refresh_interval" : "5s",
-        "number_of_shards": 1
+        "number_of_shards": 1,
         "number_of_replicas": 2
       },
       "mappings" : {
