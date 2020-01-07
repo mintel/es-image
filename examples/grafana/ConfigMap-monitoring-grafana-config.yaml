@@ -35,10 +35,10 @@ data:
       - name: Elasticsearch-system
         type: elasticsearch
         access: proxy
-        database: "logstash"
+        database: "[logstash-default-]YYYY.MM.DD[-*]"
         url: http://elasticsearch-data-log:9200
         jsonData:
-          interval: ""
+          interval: Daily
           maxConcurrentShardRequests: 5
           timeField: "@timestamp"
           esVersion: 70
