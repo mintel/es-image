@@ -7,16 +7,6 @@ data:
       @id forward-tcp
       @type forward
     </source>
-  10_dummy.input.conf: |
-    # Generaget Dummy events
-    <source>
-      @id dummy
-      @type dummy
-      dummy {"dummy":"event"}
-      rate 1
-      auto_increment_key foo
-      tag raw.dummy.*
-    </source>
   10_kubernetes.input.conf: |
     <source>
       @id containers.log
@@ -92,193 +82,15 @@ data:
         node "#{ENV['NODE_NAME']}"
       </labels>
     </source>
-  10_system.input.conf: |
-    # Logs from systemd-journal for interesting services.
+  10_dummy.input.conf: |
+    # Generaget Dummy events
     <source>
-      @id journald-docker
-      @type systemd
-      path /var/log/journal
-      matches [{ "_SYSTEMD_UNIT": "docker.service" }]
-      <storage>
-        @type local
-        persistent true
-        path /var/log/journald-docker.pos
-      </storage>
-      <entry>
-        fields_strip_underscores true
-      </entry>
-      read_from_head true
-      tag docker
-    </source>
-
-    <source>
-      @id journald-kubelet
-      @type systemd
-      path /var/log/journal
-      matches [{ "_SYSTEMD_UNIT": "kubelet.service" }]
-      <storage>
-        @type local
-        persistent true
-        path /var/log/journald-kubelet.pos
-      </storage>
-      <entry>
-        fields_strip_underscores true
-      </entry>
-      read_from_head true
-      tag kubelet
-    </source>
-
-    <source>
-      @id journald-node-problem-detector
-      @type systemd
-      path /var/log/journal
-      matches [{ "_SYSTEMD_UNIT": "node-problem-detector.service" }]
-      <storage>
-        @type local
-        persistent true
-        path /var/log/journald-npd.pos
-      </storage>
-      <entry>
-        fields_strip_underscores true
-      </entry>
-      read_from_head true
-      tag node-problem-detector
-    </source>
-
-    <source>
-      @id journald-kube-container-runtime-monitor
-      @type systemd
-      path /var/log/journal
-      matches [{ "_SYSTEMD_UNIT": "kube-container-runtime-monitor.service" }]
-      <storage>
-        @type local
-        persistent true
-        path /var/log/journald-kube-container-runtime-monitor.pos
-      </storage>
-      read_from_head true
-      tag kube-container-runtime-monitor
-    </source>
-
-    <source>
-      @id journald-kubelet-monitor
-      @type systemd
-      path /var/log/journal
-      matches [{ "_SYSTEMD_UNIT": "kubelet-monitor.service" }]
-      <storage>
-        @type local
-        persistent true
-        path /var/log/journald-kubelet-monitor.pos
-      </storage>
-      read_from_head true
-      tag kubelet-monitor
-    </source>
-
-    <source>
-      @id journald-kernel
-      @type systemd
-      path /var/log/journal
-      matches [{ "_TRANSPORT": "kernel" }]
-      <storage>
-        @type local
-        persistent true
-        path /var/log/journald-kernel.pos
-      </storage>
-      <entry>
-        fields_strip_underscores true
-        fields_lowercase true
-      </entry>
-      read_from_head true
-      tag kernel
-    </source>
-
-    <source>
-      @id journald-sshd
-      @type systemd
-      path /var/log/journal
-      matches [{ "SYSLOG_IDENTIFIER": "sshd" }]
-      <storage>
-        @type local
-        persistent true
-        path /var/log/journald-sshd.pos
-      </storage>
-      <entry>
-        fields_strip_underscores true
-        fields_lowercase true
-      </entry>
-      read_from_head true
-      tag sshd
-    </source>
-
-    <source>
-      @id journald-systemd-logind
-      @type systemd
-      path /var/log/journal
-      matches [{ "_SYSTEMD_UNIT": "systemd-logind.service" }]
-      <storage>
-        @type local
-        persistent true
-        path /var/log/journald-logind.pos
-      </storage>
-      <entry>
-        fields_strip_underscores true
-        fields_lowercase true
-      </entry>
-      read_from_head true
-      tag systemd-logind
-    </source>
-
-    <source>
-      @id journald-systemd-timesyncd
-      @type systemd
-      path /var/log/journal
-      matches [{ "_SYSTEMD_UNIT": "systemd-timesyncd.service" }]
-      <storage>
-        @type local
-        persistent true
-        path /var/log/journald-timesyncd.pos
-      </storage>
-      <entry>
-        fields_strip_underscores true
-        fields_lowercase true
-      </entry>
-      read_from_head true
-      tag systemd-timesyncd
-    </source>
-
-    <source>
-      @id journald-systemd-networkd
-      @type systemd
-      path /var/log/journal
-      matches [{ "UNIT": "systemd-networkd.service" }]
-      <storage>
-        @type local
-        persistent true
-        path /var/log/journald-networkd.pos
-      </storage>
-      <entry>
-        fields_strip_underscores true
-        fields_lowercase true
-      </entry>
-      read_from_head true
-      tag systemd-networkd
-    </source>
-
-    <source>
-      @id journald-systemd-audit
-      @type systemd
-      path /var/log/journal
-      matches [{ "SYSLOG_IDENTIFIER": "audit" }]
-      <storage>
-        @type local
-        persistent true
-        path /var/log/journald-audit.pos
-      </storage>
-      <entry>
-        fields_strip_underscores true
-        fields_lowercase true
-      </entry>
-      read_from_head true
-      tag auditlogs
+      @id dummy
+      @type dummy
+      dummy {"dummy":"event"}
+      rate 1
+      auto_increment_key foo
+      tag raw.dummy.*
     </source>
   50_kubernetes_filters.conf: |
     # Enriches records with Kubernetes metadata
@@ -352,11 +164,16 @@ data:
       </metric>
     </filter>
 
-     # Do not collect fluentd's own logs to avoid infinite loops.
-     # define <match fluent.**> to capture fluentd logs in top level is deprecated. Use <label @FLUENT_LOG> instead
-    <match fluent.**>
-      @type null
-    </match>
+    # Do not collect fluentd's own logs to avoid infinite loops.
+    # define <match fluent.**> to capture fluentd logs in top level is deprecated. Use <label @FLUENT_LOG> instead
+    #<match fluent.**>
+    #  @type null
+    #</match>
+    <label @FLUENT_LOG>
+      <match fluent.*>
+        @type stdout
+      </match>
+    </label>
   80_output.conf: |
     # @log_level info
     <match *.kubernetes.**>
@@ -375,7 +192,7 @@ data:
 
       include_timestamp true
 
-      # ILM Settings
+      # ILM Settings - WITH ROLLOVER
       # https://github.com/uken/fluent-plugin-elasticsearch#enable-index-lifecycle-management
       index_name kubernetes
       rollover_index true
@@ -383,16 +200,25 @@ data:
       index_prefix kubernetes
       application_name default
       # If empty string("") is specified in index_date_patter, index date pattern is not used. Elasticsearch plugin just creates <index_prefix-application_name-000001> 
-      #index_date_pattern ""
-      index_date_pattern "now/d"
+      #index_date_pattern "now/d"
+      index_date_pattern ""
       enable_ilm true
       # Policy configurations
       ilm_policy_id kubernetes
-      ilm_policy {"policy":{"phases":{"hot":{"actions":{"rollover":{"max_age":"1h","max_size":"10M"}}},"delete":{"min_age":"30d","actions":{"delete":{}}},"warm":{"actions":{"allocate":{"number_of_replicas":1},"forcemerge":{"max_num_segments":1}}}}}}
+      ilm_policy {"policy":{"phases":{"hot":{"actions":{"rollover":{"max_age":"1h","max_size":"2M"}}},"delete":{"min_age":"30d","actions":{"delete":{}}},"warm":{"actions":{"allocate":{"number_of_replicas":1},"forcemerge":{"max_num_segments":1}}}}}}
       template_name kubernetes
       template_file /etc/fluent/config.d/es-template-logstash.json
       template_overwrite true
-      customize_template {"<<index_prefix>>": "kubernetes"}
+      customize_template {"<<index_prefix>>": "kubernetes-*"}
+
+      # NO ILM Settings - NO ROLLOVER support
+      # logstash_format true
+      # logstash_prefix kubernetes
+      # template_name kubernetes
+      # template_file /etc/fluent/config.d/es-template-logstash.json
+      # template_overwrite true
+      # customize_template {"<<index_prefix>>": "kubernetes-*"}
+
 
       <buffer>
         @type file
@@ -429,7 +255,7 @@ data:
 
       include_timestamp true
 
-      # ILM Settings
+      # ILM Settings - WITH ROLLOVER support
       # https://github.com/uken/fluent-plugin-elasticsearch#enable-index-lifecycle-management
       index_name logstash
       rollover_index true
@@ -437,15 +263,15 @@ data:
       index_prefix logstash
       application_name default
       # If empty string("") is specified in index_date_patter, index date pattern is not used. Elasticsearch plugin just creates <index_prefix-application_name-000001> 
-      index_date_pattern ""
+      index_date_pattern "now/d"
       enable_ilm true
       # Policy configurations
       ilm_policy_id logstash
-      ilm_policy {"policy":{"phases":{"hot":{"actions":{"rollover":{"max_age":"12h","max_size":"10M"}}},"delete":{"min_age":"30d","actions":{"delete":{}}},"warm":{"actions":{"allocate":{"number_of_replicas":1},"forcemerge":{"max_num_segments":1}}}}}}
+      ilm_policy {"policy":{"phases":{"hot":{"actions":{"rollover":{"max_age":"1h","max_size":"2M"}}},"delete":{"min_age":"30d","actions":{"delete":{}}},"warm":{"actions":{"allocate":{"number_of_replicas":1},"forcemerge":{"max_num_segments":1}}}}}}
       template_name logstash
       template_file /etc/fluent/config.d/es-template-logstash.json
       template_overwrite true
-      customize_template {"<<index_prefix>>": "logstash"}
+      customize_template {"<<index_prefix>>": "logstash-*"}
 
       <buffer>
         @type file
