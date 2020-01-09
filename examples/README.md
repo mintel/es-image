@@ -67,5 +67,11 @@ kubectl apply -f grafana/
 * If you want to test the Snapshots support (The required client settings are only in the 3-single-statefulset.yml for now )
 ```
 kubectl apply -f minio/
+
+kubectl port-forward -n monitoring elasticsearch-master-log-0 9200
+
+jq -n --arg type 's3' --arg bucket 'elasticsearch' '{"type": $type, "settings": {"bucket": $bucket}}' | http -v --check-status PUT "localhost:9200/_snapshot/minio"
 ```
+
+
 
