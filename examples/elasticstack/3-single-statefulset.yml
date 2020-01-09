@@ -80,7 +80,7 @@ spec:
       terminationGracePeriodSeconds: 180
       containers:
         - name: elasticsearch
-          image: mintel/es-image:v7.5.1-3
+          image: mintel/es-image:v7.5.1-7
           imagePullPolicy: Never
           # XXX Can't set the current data node lifecycle
           # Scripts will fail at the moment if no cluster is availble ( so will never manage to start the first node )
@@ -97,6 +97,18 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: ES_PLUGINS_INSTALL
+              value: "repository-s3"
+            - name: S3_CLIENT_DEFAULT_ENDPOINT
+              value: "minio:9000"
+            - name: S3_CLIENT_DEFAULT_PROTOCOL
+              value: "http"
+            - name: S3_CLIENT_DEFAULT_PATH_STYLE_ACCESS
+              value: "true"
+            - name: S3_CLIENT_ACCESS_KEY
+              value: "minio_ak"
+            - name: S3_CLIENT_SECRET_KEY
+              value: "minio_sk"
             - name: RECOVERY_MAX_BYTES
               value: 10mb
             - name: CLUSTER_MASTER_SERVICE_NAME

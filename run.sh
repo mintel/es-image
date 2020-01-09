@@ -162,8 +162,47 @@ else
   es_opts+=("-Expack.ml.enabled=false")
 fi
 
+# Handle S3 repository settings
+if [[ ! "x${S3_CLIENT_DEFAULT_ENDPOINT}" == "x" ]]; then
+  es_opts+=("-Es3.client.default.endpoint=${S3_CLIENT_DEFAULT_ENDPOINT}")
+fi
+if [[ ! "x${S3_CLIENT_DEFAULT_PROTOCOL}" == "x" ]]; then
+  es_opts+=("-Es3.client.default.protocol=${S3_CLIENT_DEFAULT_PROTOCOL}")
+fi
+if [[ ! "x${S3_CLIENT_DEFAULT_PATH_STYLE_ACCESS}" == "x" ]]; then
+  es_opts+=("-Es3.client.default.path_style_access=${S3_CLIENT_DEFAULT_PATH_STYLE_ACCESS}")
+fi
+
+
 # Fix cgroup stats (https://github.com/elastic/elasticsearch-docker/pull/25)
 export ES_JAVA_OPTS="-Des.cgroups.hierarchy.override=/ $ES_JAVA_OPTS"
+
+# TODO: Error out if adding to credentials failed
+
+# KEYSTORE NEEDS TO BE Created and populated before starting elasticsearch
+$BASE/bin/elasticsearch-keystore create
+
+if [ ! -z "${ES_GCS_CREDENTIALS_FILE}" ]; then
+  echo "Adding GCS credentials to keystore"
+  until $BASE/bin/elasticsearch-keystore add-file gcs.client.default.credentials_file ${ES_GCS_CREDENTIALS_FILE}; do
+    echo "failed to add keystore file ${file}, retrying in 3s"
+    sleep 3
+  done
+fi
+
+set +x
+if [[ ! "x${S3_CLIENT_ACCESS_KEY}" == "x" ]] && [[ ! "x${S3_CLIENT_SECRET_KEY}" == "x" ]]; then
+  echo "Adding S3 credentials to keystore"
+  until echo -n ${S3_CLIENT_ACCESS_KEY} | $BASE/bin/elasticsearch-keystore add --stdin s3.client.default.access_key; do
+    echo "failed to add s3 access key to keystore, retrying in 3s"
+    sleep 3
+  done
+  until echo -n ${S3_CLIENT_SECRET_KEY} | $BASE/bin/elasticsearch-keystore add --stdin s3.client.default.secret_key; do
+    echo "failed to add s3 secret key to keystore, retrying in 3s"
+    sleep 3
+  done
+fi
+set -x
 
 # Trap the TERM Signals
 trap 'kill ${!}; term_handler' SIGTERM
@@ -171,13 +210,6 @@ trap 'kill ${!}; term_handler' SIGTERM
 # run Elasticsearch in the background
 $BASE/bin/elasticsearch $ES_EXTRA_ARGS "${es_opts[@]}" &
 PID="$!"
-
-if [ ! -z "${ES_GCS_CREDENTIALS_FILE}" ]; then
-  until $BASE/bin/elasticsearch-keystore add-file gcs.client.default.credentials_file ${ES_GCS_CREDENTIALS_FILE}; do
-    echo "failed to add keystore file ${file}, retrying in 3s"
-    sleep 3
-  done
-fi
 
 while true ; do
    tail -f /dev/null & wait ${!}
