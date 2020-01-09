@@ -17,6 +17,7 @@ apiVersion: v1
 data:
   filebeat.yml: |
     ---
+    filebeat.monitoring.enabled: true
     filebeat.inputs:
       - type: tcp
         host: "0.0.0.0:9080"
