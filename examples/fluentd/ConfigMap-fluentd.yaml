@@ -222,7 +222,7 @@ data:
 
       <buffer>
         @type file
-        path /tmp/fluentd-buffers/kubernetes.elasticsearch.buffer
+        path /var/log/fluentd-buffers/kubernetes.elasticsearch.buffer
         flush_mode interval
         flush_thread_count 2
         flush_interval 10s
@@ -231,7 +231,7 @@ data:
         retry_type exponential_backoff
         retry_max_interval 5m
         chunk_limit_size 2M
-        total_limit_size 256M
+        total_limit_size 512M
         queue_limit_length 8
         overflow_action drop_oldest_chunk
         disable_chunk_backup
@@ -275,7 +275,7 @@ data:
 
       <buffer>
         @type file
-        path /tmp/fluentd-buffers/logstash.elasticsearch.buffer
+        path /var/log/fluentd-buffers/logstash.elasticsearch.buffer
         flush_mode interval
         flush_thread_count 2
         flush_interval 10s
@@ -284,7 +284,7 @@ data:
         retry_type exponential_backoff
         retry_max_interval 5m
         chunk_limit_size 2M
-        total_limit_size 256M
+        total_limit_size 512M
         queue_limit_length 8
         overflow_action drop_oldest_chunk
         disable_chunk_backup
@@ -343,7 +343,7 @@ data:
     }
   system.conf: |
     <system>
-      root_dir /tmp/fluentd-buffers/
+      root_dir /tmp/fluentd/
     </system>
 kind: ConfigMap
 metadata:
