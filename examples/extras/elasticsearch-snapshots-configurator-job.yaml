@@ -1,0 +1,163 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: es-configurator-config
+  namespace: monitoring
+data:
+  config.yaml: |
+    ---
+    repos:
+      minio:
+        type: s3
+        settings:
+          bucket: elasticsearch
+          client: default
+          base_path: el-7
+    policy:
+      daily:
+        schedule: "0 30 0 * * ?"
+        repository: minio
+        name: "<daily-snap-{now/d}>"
+        config:
+          ignore_unavailable: false
+        retention:
+          expire_after: "90d"
+          min_count: 5
+          max_count: 40
+      hourly:
+        schedule: "0 10 * * * ?"
+        repository: minio
+        name: "<hourly-snap-{now/H{yyyy.MM.dd.H}}>"
+        config:
+          ignore_unavailable: false
+        retention:
+          expire_after: "24h"
+          min_count: 3
+          max_count: 24
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: es-configurator-script
+  namespace: monitoring
+data:
+  es-configurator.sh: |
+    #!/bin/bash
+    set -e
+    
+    [[ -n ${TRACE} ]] && set -x
+    
+    ES_ENDPOINT=${ES_ENDPOINT:-http://localhost:9200}
+    CONF_FILE="${CONFIG_FILE:-/tmp/config.yaml}"
+    
+    YQ_CMD="yq"
+    HTTP_CMD="http --print b"
+    HTTP_CMD_CS="${HTTP_CMD} --check-status"
+    
+    
+    create_repo() {
+      local repo
+      local json
+    
+      repo="${1}"
+      json="${2}"
+    
+      echo "${json}" | $HTTP_CMD_CS PUT "${ES_ENDPOINT}/_snapshot/${repo}"
+    }
+    
+    create_policy() {
+      local policy
+      local json
+    
+      policy="${1}"
+      json="${2}"
+    
+      echo "${json}" | $HTTP_CMD_CS PUT "${ES_ENDPOINT}/_slm/policy/${policy}"
+    }
+    
+    
+    # Get Snapshot Repos
+    mapfile -t repos < <(${YQ_CMD} -r '.repos // {} | keys[]' ${CONF_FILE})
+    # Get Snapshot Policies
+    mapfile -t policies < <(${YQ_CMD} -r '.policy // {} | keys[]' ${CONF_FILE})
+    
+    
+    # Create Snapshot Repos
+    if [[ ${#repos[@]} -gt 0 ]]; then
+      for r in "${repos[@]}"; do
+        printf "\n#####################################\n"
+        echo "Creating Snapshot Repository: $r"
+        create_repo "${r}" "$(${YQ_CMD} -c -r .repos."${r}" ${CONF_FILE})"
+      done
+    fi
+    
+    # Create Snapshot Repos
+    if [[ ${#policies[@]} -gt 0 ]]; then
+      for p in "${policies[@]}"; do
+        printf "\n#####################################\n"
+        echo "Creating Snapshot Policy: $p"
+        create_policy "${p}" "$(${YQ_CMD} -c -r .policy."${p}" ${CONF_FILE})"
+      done
+    fi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    name: es-configurator
+  name: es-configurator
+  namespace: monitoring
+spec:
+  template:
+    metadata:
+      labels:
+        name: es-configurator
+    spec:
+      containers:
+      - env:
+        - name: HOME
+          value: /tmp
+        - name: CONFIG_FILE
+          value: /configs/config.yaml
+        - name: ES_ENDPOINT
+          value: http://elasticsearch-data-log:9200
+        image: mintel/docker-alpine-bash-curl-jq:2.1.0
+        name: es-configurator
+        resources:
+          limits:
+            cpu: 50m
+            memory: 64Mi
+          requests:
+            cpu: 5m
+            memory: 8Mi
+        command:
+          - dockerize
+          - "-wait"
+          - $(ES_ENDPOINT)/_cluster/health
+          - "-timeout"
+          - 600s
+          - -wait-retry-interval
+          - 30s
+          - "--"
+          - bash
+          - /tmp/es-configurator.sh
+        volumeMounts:
+        - mountPath: /configs/config.yaml
+          name: config-volume
+          subPath: config.yaml
+        - mountPath: /tmp/es-configurator.sh
+          name: script-volume
+          subPath: es-configurator.sh
+      restartPolicy: Never
+      securityContext:
+        fsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+      volumes:
+      - configMap:
+          name: es-configurator-config
+        name: config-volume
+      - configMap:
+          name: es-configurator-script
+        name: script-volume
