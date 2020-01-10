@@ -59,7 +59,7 @@ spec:
       terminationGracePeriodSeconds: 180
       containers:
         - name: elasticsearch
-          image: mintel/es-image:v7.5.1-3
+          image: mintel/es-image:v7.5.1-8
           imagePullPolicy: Never
           lifecycle:
             postStart:
