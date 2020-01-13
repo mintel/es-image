@@ -81,14 +81,13 @@ def get_client(timeout=30):
         raise Exception(
             'Elasticsearch connection Timed out after %s seconds' % str(timeout))
 
-
 def flush_synced_all(client, trys=5):
     for _ in range(trys):
-        ret = client.indices.flush_synced(index="")
-        if ret['_shards']['failed'] == 0:
-            # Synced flush operations might fail due to pending indexing operations - reissue
-            break
-        time.sleep(5)
+        try:
+          ret = client.indices.flush_synced(index="")
+          break
+        except:
+          time.sleep(5)
 
 def set_indexes_delayed_unassigned_timeout(client):
     set_index_setting(client, "", "index.unassigned.node_left.delayed_timeout",
@@ -123,7 +122,7 @@ def reset_index_setting(client, index, setting, preserve=False):
               "%s": null
             }
           }
-      ''' % (setting, value))
+      ''' % (setting))
 
     if 'acknowledged' not in ret or ret['acknowledged'] != True:
         raise Exception('Failed to set %s to null : \n%s' %
@@ -379,6 +378,8 @@ def pre_stop_data_node(client, mode, node):
             # XXX: This will overwrite the one set in the template if any ... 
             pprint('Setting all indexes delayed_unassigned_timeout')
             set_indexes_delayed_unassigned_timeout(client)
+            # Sleep to avoid error 409 Conflict on synced flush
+            time.sleep(2)
         pprint('Perform a Synced Flush')
         flush_synced_all(client)
     elif mode.upper() == "DRAIN":

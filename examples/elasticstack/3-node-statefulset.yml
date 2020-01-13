@@ -47,11 +47,10 @@ spec:
   template:
     metadata:
       annotations:
-        roll_generation: "7"
+        roll_generation: "8"
       labels:
         app: elasticsearch
         role: data
-        roll_generation: "5"
     spec:
       securityContext:
         runAsUser: 1000
@@ -60,7 +59,7 @@ spec:
       terminationGracePeriodSeconds: 180
       containers:
         - name: elasticsearch
-          image: mintel/es-image:v7.5.1-10
+          image: mintel/es-image:v7.5.1-12
           imagePullPolicy: Never
           lifecycle:
             postStart:
@@ -78,6 +77,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: DELAYED_UNASSIGNED_TIMEOUT
+              value: "3m"
             - name: KUBERNETES_SHARD_ALLOCATION_AWARENESS
               value: "True"
             - name: RECOVERY_MAX_BYTES
@@ -127,11 +128,11 @@ spec:
             httpGet:
               path: /_cluster/health?local=true
               port: 9200
-            initialDelaySeconds: 5
+            initialDelaySeconds: 30
           livenessProbe:
             tcpSocket:
               port: transport
-            initialDelaySeconds: 40
+            initialDelaySeconds: 30
             periodSeconds: 10
           volumeMounts:
             - name: storage
