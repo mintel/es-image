@@ -14,8 +14,15 @@ WAIT_FOR_NODE_IN_CLUSTER = int(os.environ.get('WAIT_FOR_NODE_IN_CLUSTER', 180))
 WAIT_FOR_NO_SHARDS_RELOCATING = int(os.environ.get(
     'WAIT_FOR_NO_SHARDS_RELOCATING', 1800))
 
+WAIT_FOR_NO_SHARDS_DELAYED_UNASSIGNED = int(os.environ.get(
+    'WAIT_FOR_NO_SHARDS_DELAYED_UNASSIGNED', 1800))
+
 # Recovery settings - TRANSIENT
 RECOVERY_MAX_BYTES = os.environ.get('MAX_BYTES', None)
+
+# DELAYED UNASSIGNED TIMEOUT - TRANSIENT
+# https://www.elastic.co/guide/en/elasticsearch/reference/current/delayed-allocation.html
+DELAYED_UNASSIGNED_TIMEOUT = os.environ.get('DELAYED_UNASSIGNED_TIMEOUT', None)
 
 # How many concurrent incoming shard recoveries are allowed to happen on a node. Incoming recoveries are the recoveries where the target shard (most likely the replica unless a shard is relocating) is allocated on the node. Defaults to 2.
 # cluster.routing.allocation.node_concurrent_incoming_recoveries
@@ -82,6 +89,45 @@ def flush_synced_all(client, trys=5):
             # Synced flush operations might fail due to pending indexing operations - reissue
             break
         time.sleep(5)
+
+def set_indexes_delayed_unassigned_timeout(client):
+    set_index_setting(client, "", "index.unassigned.node_left.delayed_timeout",
+                                    DELAYED_UNASSIGNED_TIMEOUT)
+
+def reset_indexes_delayed_unassigned_timeout(client):
+    reset_index_setting(client, "", "index.unassigned.node_left.delayed_timeout")
+
+def set_index_setting(client, index, setting, value, preserve=False):
+    ret = client.indices.put_settings(
+        index=index,
+        preserve_existing=preserve,
+        body='''
+          {
+            "settings": {
+              "%s": \"%s\"
+            }
+          }
+      ''' % (setting, value))
+
+    if 'acknowledged' not in ret or ret['acknowledged'] != True:
+        raise Exception('Failed to set %s to %s : \n%s' %
+                        (setting, value, json.dumps(ret)))
+
+def reset_index_setting(client, index, setting, preserve=False):
+    ret = client.indices.put_settings(
+        index=index,
+        preserve_existing=preserve,
+        body='''
+          {
+            "settings": {
+              "%s": null
+            }
+          }
+      ''' % (setting, value))
+
+    if 'acknowledged' not in ret or ret['acknowledged'] != True:
+        raise Exception('Failed to set %s to null : \n%s' %
+                        (setting, json.dumps(ret)))
 
 
 def set_setting(client, persistency, setting, value):
@@ -152,6 +198,42 @@ def wait_for_node_in_cluster(client, node, timeout=WAIT_FOR_NODE_IN_CLUSTER):
             time.sleep(1)
     raise Exception('Node not in cluster after timeout: %s' % str(timeout))
 
+def is_any_shard_unassigned(client):
+    health = client.cluster.health()
+
+    if health['unassigned_shards'] != 0:
+        return True
+    else:
+        return False
+
+def is_any_shard_delayed_unassigned(client):
+    health = client.cluster.health()
+
+    if health['delayed_unassigned_shards'] != 0:
+        return True
+    else:
+        return False
+
+def wait_for_no_delayed_unassigned_shards(client, timeout):
+    # Return true if for 5 checks no shards are in delayed unassigned state
+    count = 0
+    starttime = datetime.now()
+    while True:
+        if is_any_shard_delayed_unassigned(client):
+            count = 0
+        else:
+            count += 1
+
+        if count == 5:
+            break
+        else:
+            # Are we stuck ? Timeout -> exception
+            delta = datetime.now()-starttime
+            if delta.seconds > timeout:
+                raise Exception(
+                    "Waiting for no delayed unassigned shards is taking longer then %s seconds - Timeout" % timeout)
+
+        time.sleep(2)
 
 def is_any_shard_relocating_or_initializing(client):
     health = client.cluster.health()
@@ -189,12 +271,14 @@ def wait_for_no_relocating_or_initializing_shards(client, timeout):
 # Action Functions
 
 def post_start_data_node(client, mode, node):
-    if mode.upper() == "ALLOCATION":
+    if mode.upper() == "ALLOCATION" or mode.upper() == "DELAYED_ALLOCATION":
         # Sequence:
         # - wait for node to join cluster
         # - set recovery settings
-        # - enable shards allocation
+        # - ensure shards allocation is enabled
+        # - Wait for 0 delayed unassigned shards 
         # - Wait for 0 Initializing or Relocating Shards ( Unassigned shards should be ok if this is cold startup of an elasticsearch cluster )
+        # - reset delayed_allocation_timeout on all indexes
         # - remove temporary recovery settings
         pprint('Wait for node %s to join the cluster' % node)
         wait_for_node_in_cluster(client, node)
@@ -213,9 +297,16 @@ def post_start_data_node(client, mode, node):
                         NODE_INITIAL_PRIMARIES_RECOVERIES)
         pprint('Enable Shard Allocation')
         enable_shard_allocation(client)
+        pprint('Wait for No DELAYED_UNASSIGNED shards')
+        wait_for_no_delayed_unassigned_shards(
+            client, WAIT_FOR_NO_SHARDS_DELAYED_UNASSIGNED)
         pprint('Wait for RELOCATING and INITIALIZING Shards to drop to 0')
         wait_for_no_relocating_or_initializing_shards(
             client, WAIT_FOR_NO_SHARDS_RELOCATING)
+        if DELAYED_UNASSIGNED_TIMEOUT:
+          # XXX: This will overwrite the one set in the template if any ... 
+          pprint('Reset all indexes delayed_unassigned_timeout')
+          reset_indexes_delayed_unassigned_timeout(client)
         pprint('Reset Recovery Settings')
         if RECOVERY_MAX_BYTES:
             unset_setting(client, "transient",
@@ -276,12 +367,18 @@ def post_start_data_node(client, mode, node):
 
 
 def pre_stop_data_node(client, mode, node):
-    if mode.upper() == "ALLOCATION":
+    if mode.upper() == "ALLOCATION" or mode.upper() == "DELAYED_ALLOCATION":
         # Sequence:
-        # - Disable Shard Allocation
+        # - Disable Shard Allocation or Set Delayed Allocation Timeout
         # - Perform a Synced Flush
-        pprint('Disabling Shard Allocation')
-        disable_shard_allocation(client)
+        if mode.upper() == "ALLOCATION":
+          pprint('Disabling Shard Allocation')
+          disable_shard_allocation(client)
+        elif mode.upper() == "DELAYED_ALLOCATION":
+          if DELAYED_UNASSIGNED_TIMEOUT:
+            # XXX: This will overwrite the one set in the template if any ... 
+            pprint('Setting all indexes delayed_unassigned_timeout')
+            set_indexes_delayed_unassigned_timeout(client)
         pprint('Perform a Synced Flush')
         flush_synced_all(client)
     elif mode.upper() == "DRAIN":

@@ -80,7 +80,7 @@ spec:
       terminationGracePeriodSeconds: 180
       containers:
         - name: elasticsearch
-          image: mintel/es-image:v7.5.1-8
+          image: mintel/es-image:v7.5.1-10
           imagePullPolicy: Never
           # XXX Can't set the current data node lifecycle
           # Scripts will fail at the moment if no cluster is availble ( so will never manage to start the first node )
@@ -141,7 +141,7 @@ spec:
             - name: PERSISTENT_SETTINGS_FILE_PATH
               value: "/tmp/persistent-settings.json"
             - name: MAINTENANCE_MODE
-              value: "ALLOCATION"
+              value: "DELAYED_ALLOCATION"
           resources:
             requests:
               cpu: 0.35
