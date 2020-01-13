@@ -83,8 +83,6 @@ spec:
               value: 20mb
             - name: CLUSTER_NAME
               value: logs
-            - name: ROLL
-              value: "true"
             - name: DISCOVERY_SERVICE
               value: elasticsearch-master-log
             - name: NODE_MASTER
