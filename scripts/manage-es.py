@@ -345,6 +345,9 @@ def post_start_data_node(client, mode, node):
         pprint('UnDrain Local Node %s' % node)
         unset_setting(client, "transient",
                       "cluster.routing.allocation.exclude._name")
+        pprint('Wait for No DELAYED_UNASSIGNED shards')
+        wait_for_no_delayed_unassigned_shards(
+            client, WAIT_FOR_NO_SHARDS_DELAYED_UNASSIGNED)
         pprint('Wait for RELOCATING and INITIALIZING Shards to drop to 0')
         wait_for_no_relocating_or_initializing_shards(
             client, WAIT_FOR_NO_SHARDS_RELOCATING)
@@ -404,6 +407,9 @@ def pre_stop_data_node(client, mode, node):
         pprint('Drain Local Node %s' % node)
         set_setting(client, "transient",
                     "cluster.routing.allocation.exclude._name", node)
+        pprint('Wait for No DELAYED_UNASSIGNED shards')
+        wait_for_no_delayed_unassigned_shards(
+            client, WAIT_FOR_NO_SHARDS_DELAYED_UNASSIGNED)
         pprint('Wait for RELOCATING and INITIALIZING Shards to drop to 0')
         wait_for_no_relocating_or_initializing_shards(
             client, WAIT_FOR_NO_SHARDS_RELOCATING)
