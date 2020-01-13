@@ -6,5 +6,5 @@ metadata:
 data:
   settings.json: |
     {
-            "indices.recovery.max_bytes_per_sec" : "50mb"
+            "indices.recovery.max_bytes_per_sec" : "10mb"
     }

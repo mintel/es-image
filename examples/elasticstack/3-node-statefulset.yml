@@ -47,7 +47,7 @@ spec:
   template:
     metadata:
       annotations:
-        roll_generation: "9"
+        roll_generation: "10"
       labels:
         app: elasticsearch
         role: data
