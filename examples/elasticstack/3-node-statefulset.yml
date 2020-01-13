@@ -47,7 +47,7 @@ spec:
   template:
     metadata:
       annotations:
-        roll_generation: "8"
+        roll_generation: "9"
       labels:
         app: elasticsearch
         role: data
@@ -77,8 +77,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: DELAYED_UNASSIGNED_TIMEOUT
-              value: "3m"
             - name: KUBERNETES_SHARD_ALLOCATION_AWARENESS
               value: "True"
             - name: RECOVERY_MAX_BYTES

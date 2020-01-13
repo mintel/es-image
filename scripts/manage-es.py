@@ -22,6 +22,7 @@ RECOVERY_MAX_BYTES = os.environ.get('MAX_BYTES', None)
 
 # DELAYED UNASSIGNED TIMEOUT - TRANSIENT
 # https://www.elastic.co/guide/en/elasticsearch/reference/current/delayed-allocation.html
+# XXX it seems the cluster will *always* wait for this amount of time before starting to re-assign shards, even if the node is back
 DELAYED_UNASSIGNED_TIMEOUT = os.environ.get('DELAYED_UNASSIGNED_TIMEOUT', None)
 
 # How many concurrent incoming shard recoveries are allowed to happen on a node. Incoming recoveries are the recoveries where the target shard (most likely the replica unless a shard is relocating) is allocated on the node. Defaults to 2.
