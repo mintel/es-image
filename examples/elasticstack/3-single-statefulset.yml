@@ -140,7 +140,7 @@ spec:
             - name: ES_JAVA_OPTS
               value: -Xms512m -Xmx512m
             - name: POST_TERM_WAIT
-              value: "5"
+              value: "30"
             - name: NETWORK_ADDRESS_CACHE_TTL
               value: "2"
             - name: NETWORK_ADDRESS_CACHE_NEGATIVE_TTL
@@ -168,7 +168,11 @@ spec:
             httpGet:
               path: /
               port: 9200
-            initialDelaySeconds: 5
+            failureThreshold: 3
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
           livenessProbe:
             tcpSocket:
               port: transport

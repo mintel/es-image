@@ -102,7 +102,7 @@ spec:
             - name: ES_JAVA_OPTS
               value: -Xms256m -Xmx256m
             - name: POST_TERM_WAIT
-              value: "5"
+              value: "30"
             - name: NETWORK_ADDRESS_CACHE_TTL
               value: "2"
             - name: NETWORK_ADDRESS_CACHE_NEGATIVE_TTL
