@@ -2,55 +2,60 @@
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
-  name: elasticsearch-node
+  name: elasticsearch-master
   namespace: monitoring
 spec:
   maxUnavailable: 1
   selector:
     matchLabels:
       app: elasticsearch
-      role: node
+      role: master
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: elasticsearch-node
+  name: elasticsearch-master-log
   namespace: monitoring
   labels:
     app: elasticsearch
-    role: data
+    role: discovery
 spec:
   selector:
     app: elasticsearch
-    role: node
+    role: master
   ports:
     - name: http
       port: 9200
+      protocol: TCP
+    - name: transport
+      port: 9300
+      protocol: TCP
+  clusterIP: None
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: elasticsearch-node
+  name: elasticsearch-master-log
   namespace: monitoring
   labels:
     app: elasticsearch
-    role: node
+    role: master
 spec:
-  serviceName: elasticsearch-node
+  serviceName: elasticsearch-master-log
   replicas: 3
   updateStrategy:
     type: RollingUpdate
   selector:
     matchLabels:
       app: elasticsearch
-      role: node
+      role: master
   template:
     metadata:
       annotations:
         roll_generation: "1"
       labels:
         app: elasticsearch
-        role: node
+        role: master
     spec:
       securityContext:
         runAsUser: 1000
@@ -59,15 +64,14 @@ spec:
       terminationGracePeriodSeconds: 180
       containers:
         - name: elasticsearch
-          image: mintel/es-image:latest
-          imagePullPolicy: Never
+          #image: mintel/es-image:v7.5.1-12
+          #image: mintel/elasticsearch:v7.4.1-2
+          image: mintel/elasticsearch:test-test-v7.5.1-1
+          #imagePullPolicy: Never
           lifecycle:
             postStart:
               exec:
-                command: ["/start-data-node.sh"]
-            preStop:
-              exec:
-                command: ["/stop-data-node.sh"]
+                command: ["/usr/bin/bash", "-c", "sleep 60"]
           env:
             - name: NAMESPACE
               valueFrom:
@@ -77,26 +81,28 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: KUBERNETES_SHARD_ALLOCATION_AWARENESS
-              value: "True"
-            - name: RECOVERY_MAX_BYTES
-              value: 20mb
+            - name: CLUSTER_MASTER_SERVICE_NAME
+              value: elasticsearch-master-log
+            - name: DISCOVERY_SERVICE
+              value: elasticsearch-master-log
             - name: CLUSTER_NAME
               value: logs
-            - name: DISCOVERY_SERVICE
-              value: "elasticsearch-discovery.monitoring.svc.cluster.local"
+            - name: KUBERNETES_SHARD_ALLOCATION_AWARENESS
+              value: "True"
+            - name: MASTER_NODES
+              value: elasticsearch-master-log-0,elasticsearch-master-log-1,elasticsearch-master-log-2 
             - name: NODE_MASTER
-              value: "false"
+              value: "true"
             - name: NODE_INGEST
-              value: "true"
+              value: "false"
             - name: NODE_DATA
-              value: "true"
+              value: "false"
             - name: NETWORK_HOST
               value: "0.0.0.0"
             - name: ES_JAVA_OPTS
               value: -Xms256m -Xmx256m
             - name: POST_TERM_WAIT
-              value: "5"
+              value: "30"
             - name: NETWORK_ADDRESS_CACHE_TTL
               value: "2"
             - name: NETWORK_ADDRESS_CACHE_NEGATIVE_TTL
@@ -104,17 +110,13 @@ spec:
             # PROCESSORS NEED TO BE AN INTEGER
             - name: PROCESSORS
               value: "1"
-            - name: PERSISTENT_SETTINGS_FILE_PATH
-              value: "/tmp/persistent-settings.json"
-            - name: MAINTENANCE_MODE
-              value: "ALLOCATION"
           resources:
             requests:
-              cpu: 0.15
+              cpu: 0.35
               memory: 350Mi
             limits:
-              cpu: 0.50
-              memory: 1024Mi
+              cpu: 0.750
+              memory: 512Mi
           ports:
             - containerPort: 9200
               name: http
@@ -122,7 +124,7 @@ spec:
               name: transport
           readinessProbe:
             httpGet:
-              path: /_cluster/health?local=true
+              path: /
               port: 9200
             initialDelaySeconds: 5
           livenessProbe:
@@ -133,12 +135,16 @@ spec:
           volumeMounts:
             - name: storage
               mountPath: /data
-            - name: persistent-settings
-              mountPath: /tmp/persistent-settings.json
-              subPath: settings.json
       volumes:
         - name: storage
           emptyDir: {}
-        - name: persistent-settings
-          configMap:
-            name: persistent-settings
+  #volumeClaimTemplates:
+  #  - metadata:
+  #      name: storage
+  #    spec:
+  #      accessModes:
+  #      - ReadWriteOnce
+  #      resources:
+  #        requests:
+  #          storage: 1Gi
+  #      storageClassName: local-path

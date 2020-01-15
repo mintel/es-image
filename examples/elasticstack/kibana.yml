@@ -1,0 +1,156 @@
+---
+apiVersion: v1
+data:
+  setup-kibana.sh: |
+    #!/bin/bash
+    # Perform configuration of kibana via the REST API
+    set -ex
+
+    # Configure default_field
+    echo "Configuring Kibana: Default Field"
+    curl --fail 'http://localhost:5601/api/kibana/settings' \
+      -H 'content-type: application/json' \
+      -H 'kbn-xsrf: true' \
+      --data-binary '{"changes":{"query:queryString:options":"{ \"analyze_wildcard\": true, \"default_field\": \"log\" }"}}'
+
+    # kubernetes index
+    echo "Configuring Kibana: Create kubernetes index-pattern"
+    curl --fail -X POST 'http://localhost:5601/api/saved_objects/index-pattern/kubernetes?overwrite=true' \
+      -H 'content-type: application/json' \
+      -H 'kbn-xsrf: true' \
+      -d"{\"attributes\":{\"title\":\"kubernetes\",\"timeFieldName\":\"@timestamp\"}}"
+
+    curl --fail -X POST 'http://localhost:5601/api/kibana/settings/defaultIndex' \
+      -H 'content-type: application/json' \
+      -H 'kbn-xsrf: true' \
+      -d"{\"value\":\"kubernetes\"}"
+
+    # logstash index
+    echo "Configuring Kibana: Create logstash index-pattern"
+    curl --fail -X POST 'http://localhost:5601/api/saved_objects/index-pattern/logstash?overwrite=true' \
+      -H 'content-type: application/json' \
+      -H 'kbn-xsrf: true' \
+      -d"{\"attributes\":{\"title\":\"logstash\",\"timeFieldName\":\"@timestamp\"}}"
+
+    # events index
+    echo "Configuring Kibana: Create events index-pattern"
+    curl --fail -X POST 'http://localhost:5601/api/saved_objects/index-pattern/events?overwrite=true' \
+      -H 'content-type: application/json' \
+      -H 'kbn-xsrf: true' \
+      -d"{\"attributes\":{\"title\":\"events\",\"timeFieldName\":\"@timestamp\"}}"
+
+    # filebeat index
+    echo "Configuring Kibana: Create filebeat index-pattern"
+    curl --fail -X POST 'http://localhost:5601/api/saved_objects/index-pattern/filebeat?overwrite=true' \
+      -H 'content-type: application/json' \
+      -H 'kbn-xsrf: true' \
+      -d"{\"attributes\":{\"title\":\"filebeat\",\"timeFieldName\":\"@timestamp\"}}"
+
+
+kind: ConfigMap
+metadata:
+  labels:
+    name: kibana
+  name: kibana-config-script
+  namespace: monitoring
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: kibana
+  name: kibana-log
+  namespace: monitoring
+spec:
+  ports:
+  - name: ui
+    port: 5601
+    protocol: TCP
+    targetPort: ui
+  selector:
+    name: kibana
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: kibana
+  name: kibana-log
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: kibana
+  template:
+    metadata:
+      labels:
+        name: kibana
+    spec:
+      containers:
+      - env:
+        - name: SERVER_HOST
+          value: 0.0.0.0
+        - name: ELASTICSEARCH_HOSTS
+          value: http://elasticsearch-data-log:9200
+        - name: CLUSTER_NAME
+          value: logs
+        image: kibana:7.5.1
+        livenessProbe:
+          httpGet:
+            path: /api/status
+            port: ui
+          initialDelaySeconds: 20
+          timeoutSeconds: 5
+        name: kibana
+        ports:
+        - containerPort: 5601
+          name: ui
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /api/status
+            port: ui
+          initialDelaySeconds: 20
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: 300m
+            memory: 512Mi
+          requests:
+            cpu: 50m
+            memory: 256Mi
+      - name: setup
+        image: mintel/docker-alpine-bash-curl-jq:2.0.0
+        resources:
+          limits:
+            cpu: 50m
+            memory: 128Mi
+          requests:
+            cpu: 1m
+            memory: 8Mi
+        command: [ '/pause' ]
+        lifecycle:
+          postStart:
+            exec:
+              command:
+                - dockerize
+                - -wait
+                - http://localhost:5601
+                - -timeout
+                - 600s
+                - -wait-retry-interval
+                - 10s
+                - bash
+                - /opt/setup-kibana.sh
+        volumeMounts:
+        - mountPath: /opt/setup-kibana.sh
+          name: config-volume
+          subPath: setup-kibana.sh
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+      volumes:
+      - configMap:
+          name: kibana-config-script
+        name: config-volume

@@ -13,10 +13,11 @@
 # limitations under the License.
 
 
-FROM docker.elastic.co/elasticsearch/elasticsearch-oss:7.4.1
+#FROM docker.elastic.co/elasticsearch/elasticsearch:7.5.1
+FROM elasticsearch:7.5.1
 
 LABEL vendor="Mintel"
-LABEL version="7.4.1"
+LABEL version="7.5.1"
 LABEL maintainer="fciocchetti@mintel.com"
 LABEL vcs-url="https://github.com/mintel/es-image"
 
@@ -31,7 +32,7 @@ ENV JQ_VERSION=1.5 \
     JQ_SHA256=c6b3a7d7d3e7b70c6f51b706a3b90bd01833846c54d32ca32f0027f00226ff6d
 # Last pip version that has not deprecated python 2.7
 ENV NEW_PIP_VERSION=18.1
-ENV ELASTICSEARCH_PY_VERSION=7.0.5
+ENV ELASTICSEARCH_PY_VERSION=7.1.0
 
 # jq
 RUN set -xe \
@@ -64,7 +65,7 @@ ENV CLUSTER_NAME=elasticsearch-default \
     ES_GCLOG_FILE_PATH=/data/log/gc.log \
     ES_GCLOG_FILE_SIZE=64m \
     ES_JAVA_OPTS="-Xms512m -Xmx512m" \
-    ES_VERSION=7.4.1 \
+    ES_VERSION=7.5.1 \
     HTTP_CORS_ALLOW_ORIGIN="*" \
     HTTP_CORS_ENABLE=true \
     MASTER_NODES=localhost \
@@ -78,7 +79,9 @@ ENV CLUSTER_NAME=elasticsearch-default \
     PATH=/usr/share/elasticsearch/bin:$PATH \
     REPO_LOCATIONS="" \
     SHARD_ALLOCATION_AWARENESS="" \
-    SHARD_ALLOCATION_AWARENESS_ATTR=""
+    SHARD_ALLOCATION_AWARENESS_ATTR="" \
+    XPACK_MONITORING="true" \
+    XPACK_ML="false"
 
 WORKDIR /usr/share/elasticsearch
 

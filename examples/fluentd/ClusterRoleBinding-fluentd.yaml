@@ -1,0 +1,16 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    name: fluentd
+  name: fluentd
+roleRef:
+  apiGroup: ""
+  kind: ClusterRole
+  name: fluentd
+subjects:
+- apiGroup: ""
+  kind: ServiceAccount
+  name: fluentd
+  namespace: monitoring

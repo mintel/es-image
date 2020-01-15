@@ -1,0 +1,73 @@
+---
+apiVersion: v1
+data:
+  datasources.yml: |
+    apiVersion: 1
+    datasources:
+      #- name: Prometheus
+      #  type: prometheus
+      #  url: http://prometheus-k8s.monitoring.svc:9090
+      #  access: proxy
+      #  isDefault: true
+      #  basicAuth: false
+      #- name: Alertmanager
+      #  type: camptocamp-prometheus-alertmanager-datasource
+      #  url: http://alertmanager-main.monitoring.svc:9093
+      #  access: proxy
+      #  isDefault: false
+      #  basicAuth: false
+      #  jsonData:
+      #    severity_critical: "4"
+      #    severity_high: "3"
+      #    severity_warning: "2"
+      #    severity_info: "1"
+      - name: Elasticsearch-containers
+        type: elasticsearch
+        access: proxy
+        database: "kubernetes"
+        url: http://elasticsearch-data-log:9200
+        jsonData:
+          interval: ""
+          maxConcurrentShardRequests: 5
+          timeField: "@timestamp"
+          esVersion: 70
+          logMessageField: _source
+      - name: Elasticsearch-system
+        type: elasticsearch
+        access: proxy
+        database: "[logstash-default-]YYYY.MM.DD[-*]"
+        url: http://elasticsearch-data-log:9200
+        jsonData:
+          interval: Daily
+          maxConcurrentShardRequests: 5
+          timeField: "@timestamp"
+          esVersion: 70
+          logMessageField: _source
+  grafana.ini: |
+    [analytics]
+    check_for_updates = false
+
+    [auth.proxy]
+    enabled = true
+    header_name = X-AUTH-USERNAME
+    header_property = username
+    auto_sign_up = true
+
+    [log]
+    mode = console
+    level = debug
+
+    [paths]
+    data = /var/lib/grafana/data
+    logs = /var/log/grafana
+    plugins = /var/lib/grafana/plugins
+
+    [users]
+    allow_sign_up = false
+    auto_assign_org = true
+kind: ConfigMap
+metadata:
+  labels:
+    name: grafana
+  name: grafana-config
+  namespace: monitoring

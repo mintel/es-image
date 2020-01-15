@@ -1,0 +1,183 @@
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: elasticsearch-cluster
+  namespace: monitoring
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+      role: cluster
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-cluster-log
+  namespace: monitoring
+  labels:
+    app: elasticsearch
+    role: discovery
+spec:
+  selector:
+    app: elasticsearch
+    role: cluster
+  ports:
+    - name: transport
+      port: 9300
+      protocol: TCP
+    - name: http
+      port: 9200
+      protocol: TCP
+  clusterIP: None
+---                      
+apiVersion: v1                   
+kind: Service               
+metadata:                                                           
+  name: elasticsearch-data-log                                      
+  namespace: monitoring        
+  labels:                   
+    app: elasticsearch                                              
+    role: data             
+spec:                                                               
+  selector:                                                         
+    app: elasticsearch                                              
+    role: cluster
+  ports:                                                            
+    - name: http                                                    
+      port: 9200    
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch-cluster-log
+  namespace: monitoring
+  labels:
+    app: elasticsearch
+    role: cluster
+spec:
+  serviceName: elasticsearch-cluster-log
+  replicas: 3
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+    - metadata:
+        name: storage
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: local-path
+  selector:
+    matchLabels:
+      app: elasticsearch
+      role: cluster
+  template:
+    metadata:
+      annotations:
+        roll_generation: "1"
+      labels:
+        app: elasticsearch
+        role: cluster
+    spec:
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+      serviceAccountName: elasticsearch
+      terminationGracePeriodSeconds: 180
+      containers:
+        - name: elasticsearch
+          image: mintel/elasticsearch:test-test-v7.5.1-1
+          #image: mintel/elasticsearch:v7.4.1-2
+          # XXX Can't set the current data node lifecycle
+          # Scripts will fail at the moment if no cluster is availble ( so will never manage to start the first node )
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/usr/bin/bash", "-c", "sleep 60"]
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: ES_PLUGINS_INSTALL
+              value: "repository-s3"
+            - name: S3_CLIENT_DEFAULT_ENDPOINT
+              value: "minio:9000"
+            - name: S3_CLIENT_DEFAULT_PROTOCOL
+              value: "http"
+            - name: S3_CLIENT_DEFAULT_PATH_STYLE_ACCESS
+              value: "true"
+            - name: S3_CLIENT_ACCESS_KEY
+              value: "minio_ak"
+            - name: S3_CLIENT_SECRET_KEY
+              value: "minio_sk"
+            - name: RECOVERY_MAX_BYTES
+              value: 10mb
+            - name: CLUSTER_MASTER_SERVICE_NAME
+              value: elasticsearch-cluster-log
+            - name: DISCOVERY_SERVICE
+              value: elasticsearch-cluster-log
+            - name: CLUSTER_NAME
+              value: logs
+            - name: MASTER_NODES
+              value: elasticsearch-cluster-log-0,elasticsearch-cluster-log-1,elasticsearch-cluster-log-2 
+            - name: NODE_MASTER
+              value: "true"
+            - name: NODE_INGEST
+              value: "true"
+            - name: NODE_DATA
+              value: "true"
+            - name: NETWORK_HOST
+              value: "0.0.0.0"
+            - name: ES_JAVA_OPTS
+              value: -Xms512m -Xmx512m
+            - name: POST_TERM_WAIT
+              value: "30"
+            - name: NETWORK_ADDRESS_CACHE_TTL
+              value: "2"
+            - name: NETWORK_ADDRESS_CACHE_NEGATIVE_TTL
+              value: "2"
+            # PROCESSORS NEED TO BE AN INTEGER
+            - name: PROCESSORS
+              value: "1"
+            - name: PERSISTENT_SETTINGS_FILE_PATH
+              value: "/tmp/persistent-settings.json"
+            - name: MAINTENANCE_MODE
+              value: "DELAYED_ALLOCATION"
+          resources:
+            requests:
+              cpu: 0.35
+              memory: 512Mi
+            limits:
+              cpu: 1
+              memory: 1024Mi
+          ports:
+            - containerPort: 9200
+              name: http
+            - containerPort: 9300
+              name: transport
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9200
+            failureThreshold: 3
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: transport
+            initialDelaySeconds: 40
+            periodSeconds: 10
+          volumeMounts:
+            - name: storage
+              mountPath: /data

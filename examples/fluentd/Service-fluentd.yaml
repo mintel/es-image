@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: fluentd
+  name: fluentd
+  namespace: monitoring
+spec:
+  clusterIP: None
+  ports:
+  - name: metrics
+    port: 24231
+    protocol: TCP
+  selector:
+    name: fluentd

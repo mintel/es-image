@@ -1,0 +1,197 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    name: metricbeat-events
+  name: metricbeat-events-log
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    name: metricbeat-events
+  name: metricbeat-events-log
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: metricbeat-events-log
+subjects:
+- kind: ServiceAccount
+  name: metricbeat-events-log
+  namespace: monitoring
+---
+apiVersion: v1
+data:
+  metricbeat.yml: |
+    ---
+    metricbeat.monitoring.enabled: true
+    metricbeat.config.modules:
+      # Mounted `metricbeat-daemonset-modules` configmap:
+      path: ${path.config}/modules.d/*.yml
+      # Reload module configs as they change:
+      reload.enabled: false
+    processors:
+    - add_fields:
+        target: ''
+        fields:
+          k8s_cluster: vault
+          k8s_environment: dev
+    setup.template:
+      name: "events"
+      pattern: "events-*"
+      overwrite: true
+      settings:
+        index.number_of_shards: 1
+        index.number_of_replicas: 2
+    setup.ilm:
+      enabled: true
+      rollover_alias: "events"
+      pattern: "{now/d}-000001"
+      policy_name: "events"
+      policy_file: "/usr/share/metricbeat/metricbeat_events_ilm_policy.json"
+    output.elasticsearch:
+      hosts: ["http://elasticsearch-data-log.monitoring.svc.cluster.local:9200"]
+kind: ConfigMap
+metadata:
+  labels:
+    name: metricbeat-events
+  name: metricbeat-events-config
+  namespace: monitoring
+---
+apiVersion: v1
+data:
+  kubernetes.yml: |
+    - module: kubernetes
+      metricsets:
+      - event
+kind: ConfigMap
+metadata:
+  labels:
+    name: metricbeat-events
+  name: metricbeat-events-module
+  namespace: monitoring
+---
+apiVersion: v1
+data:
+  metricbeat_events_ilm_policy.json: |
+    {
+      "policy": {
+        "phases": {
+          "hot": {
+            "actions": {
+              "rollover": {
+                "max_age": "1h",
+                "max_size": "2M"
+              }
+            }
+          },
+          "delete": {
+            "min_age": "30d",
+            "actions": {
+              "delete": {}
+            }
+          },
+          "warm": {
+            "actions": {
+              "allocate": {
+                "number_of_replicas": 1
+              },
+              "forcemerge": {
+                "max_num_segments": 1
+              }
+            }
+          }
+        }
+      }
+    }
+kind: ConfigMap
+metadata:
+  name: metricbeat-events-ilm-policy
+  namespace: monitoring
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    name: metricbeat-events
+  name: metricbeat-events-log
+  namespace: monitoring
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: metricbeat-events
+  name: metricbeat-events-log
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      name: metricbeat-events
+  template:
+    metadata:
+      labels:
+        name: metricbeat-events
+    spec:
+      containers:
+      - args:
+        - -c
+        - /etc/metricbeat.yml
+        - -e
+        - -E
+        - http.enabled=true
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        image: docker.elastic.co/beats/metricbeat:7.5.1
+        livenessProbe:
+          exec:
+            command:
+            - curl
+            - --fail
+            - 127.0.0.1:5066
+        name: metricbeat
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 50m
+            memory: 50Mi
+        volumeMounts:
+        - mountPath: /etc/metricbeat.yml
+          name: config
+          readOnly: true
+          subPath: metricbeat.yml
+        - mountPath: /usr/share/metricbeat/modules.d
+          name: modules
+          readOnly: true
+        - mountPath: /usr/share/metricbeat/metricbeat_events_ilm_policy.json
+          name: ilm-policy
+          readOnly: true
+          subPath: metricbeat_events_ilm_policy.json
+      securityContext:
+        runAsUser: 1000
+      serviceAccountName: metricbeat-events-log
+      volumes:
+      - configMap:
+          name: metricbeat-events-config
+        name: config
+      - configMap:
+          name: metricbeat-events-module
+        name: modules
+      - configMap:
+          name: metricbeat-events-ilm-policy
+        name: ilm-policy
