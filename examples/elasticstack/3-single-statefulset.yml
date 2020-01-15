@@ -61,6 +61,16 @@ spec:
   replicas: 3
   updateStrategy:
     type: RollingUpdate
+  volumeClaimTemplates:
+    - metadata:
+        name: storage
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: local-path
   selector:
     matchLabels:
       app: elasticsearch
@@ -80,8 +90,8 @@ spec:
       terminationGracePeriodSeconds: 180
       containers:
         - name: elasticsearch
-          image: mintel/es-image:v7.5.1-12
-          imagePullPolicy: Never
+          image: mintel/elasticsearch:test-test-v7.5.1-1
+          #image: mintel/elasticsearch:v7.4.1-2
           # XXX Can't set the current data node lifecycle
           # Scripts will fail at the moment if no cluster is availble ( so will never manage to start the first node )
           lifecycle:
@@ -156,7 +166,7 @@ spec:
               name: transport
           readinessProbe:
             httpGet:
-              path: /_cluster/health?local=true
+              path: /
               port: 9200
             initialDelaySeconds: 5
           livenessProbe:
@@ -167,6 +177,3 @@ spec:
           volumeMounts:
             - name: storage
               mountPath: /data
-      volumes:
-        - name: storage
-          emptyDir: {}
