@@ -2,7 +2,7 @@
 
 set -ex
 
-export POST_TERM_WAIT=${POST_TERM_WAIT:-15}
+export POST_TERM_WAIT=${POST_TERM_WAIT:-30}
 
 # https://stackoverflow.com/questions/1527049/how-can-i-join-elements-of-an-array-in-bash
 function join_by { local IFS="$1"; shift; echo "$*"; }
